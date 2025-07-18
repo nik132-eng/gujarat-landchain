@@ -1,0 +1,63 @@
+# Gujarat LandChain - Dependencies
+*
+!.gitignore
+!README.md
+!LICENSE
+!package.json
+!package-lock.json
+!Cargo.toml
+!Cargo.lock
+!Anchor.toml
+
+# Keep essential directories
+!src/
+!docs/
+!tests/
+!scripts/
+!.github/
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Julia
+.julia/
+Manifest.toml
+
+# Rust
+target/
+Cargo.lock
+
+# Solana
+.anchor/
+test-ledger/
+.solana/
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
