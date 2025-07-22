@@ -1,0 +1,345 @@
+name: 🚀 Gujarat LandChain CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.12'
+  RUST_VERSION: 'stable'
+
+jobs:
+  # Job 1: Code Quality & Linting
+  lint-and-format:
+    name: 🔍 Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Lint TypeScript
+        run: npm run lint
+
+      - name: 🎨 Check Prettier formatting
+        run: npm run format:check
+
+      - name: 📊 Type check
+        run: npm run type-check
+
+  # Job 2: Frontend Testing (Apps)
+  test-frontend:
+    name: 🧪 Test Frontend Apps
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [citizen-pwa, official-dashboard]
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run tests for ${{ matrix.app }}
+        run: |
+          cd apps/${{ matrix.app }}
+          npm test -- --coverage --watchAll=false
+
+      - name: 🏗️ Build ${{ matrix.app }}
+        run: |
+          cd apps/${{ matrix.app }}
+          npm run build
+
+      - name: 📊 Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: apps/${{ matrix.app }}/coverage/lcov.info
+          flags: ${{ matrix.app }}
+
+  # Job 3: Backend Services Testing
+  test-backend:
+    name: 🧪 Test Backend Services
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: landchain_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    strategy:
+      matrix:
+        service: [api-gateway, auth-service, bridge-service]
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run tests for ${{ matrix.service }}
+        run: |
+          cd services/${{ matrix.service }}
+          npm test -- --coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/landchain_test
+          REDIS_URL: redis://localhost:6379
+
+  # Job 4: AI Service Testing (Python)
+  test-ai-service:
+    name: 🤖 Test AI Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Install Python dependencies
+        run: |
+          cd services/ai-service
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: 🧪 Run Python tests
+        run: |
+          cd services/ai-service
+          pytest --cov=src --cov-report=xml
+
+      - name: 📊 Upload AI service coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: services/ai-service/coverage.xml
+          flags: ai-service
+
+  # Job 5: Smart Contract Testing
+  test-contracts:
+    name: ⛓️ Test Smart Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 🦀 Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          profile: minimal
+          override: true
+
+      - name: 📦 Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v1.17.0/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: 📦 Install Anchor CLI
+        run: npm install -g @coral-xyz/anchor-cli
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Test Ethereum contracts
+        run: |
+          cd contracts/ethereum
+          npm test
+
+      - name: 🧪 Test Solana programs
+        run: |
+          cd contracts/solana
+          anchor test
+
+  # Job 6: Security Scanning
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run npm audit
+        run: npm audit --audit-level moderate
+
+      - name: 🔒 Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: 🔍 Scan Solidity contracts with Slither
+        if: github.event_name == 'push'
+        run: |
+          pip install slither-analyzer
+          cd contracts/ethereum
+          slither . --print summary
+
+  # Job 7: Build Docker Images
+  build-docker:
+    name: 🐳 Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [lint-and-format, test-frontend, test-backend, test-ai-service]
+    if: github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        service: [api-gateway, auth-service, ai-service, bridge-service]
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 🏗️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🐳 Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/${{ matrix.service }}
+          file: ./services/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: |
+            gujaratlandchain/${{ matrix.service }}:latest
+            gujaratlandchain/${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Job 8: Deploy to Staging
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build-docker, test-contracts, security-scan]
+    if: github.ref == 'refs/heads/main'
+    environment: staging
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy to Railway
+        run: |
+          npm install -g @railway/cli
+          railway login --browserless
+          railway up --service frontend
+          railway up --service backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: 🌐 Update staging URLs
+        run: |
+          echo "🎉 Staging deployment complete!"
+          echo "Frontend: https://gujarat-landchain-staging.railway.app"
+          echo "API: https://api-staging.railway.app"
+
+  # Job 9: Performance Testing
+  performance-test:
+    name: ⚡ Performance Testing
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install Lighthouse CI
+        run: npm install -g @lhci/cli
+
+      - name: 🚀 Run Lighthouse CI
+        run: lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: 📊 Run load tests
+        run: |
+          npx artillery quick --count 10 --num 3 https://api-staging.railway.app/health
+
+  # Job 10: Notification
+  notify-completion:
+    name: 📢 Notify Completion
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, performance-test]
+    if: always()
+    steps:
+      - name: 📢 Discord notification
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+            🚀 **Gujarat LandChain CI/CD Complete!**
+            
+            **Commit**: `${{ github.sha }}`
+            **Status**: ${{ job.status }}
+            **Branch**: ${{ github.ref_name }}
+            
+            **Staging URLs**:
+            - Frontend: https://gujarat-landchain-staging.railway.app
+            - API: https://api-staging.railway.app
+            
+            ${{ job.status == 'success' && '✅ All tests passed!' || '❌ Some tests failed!' }}

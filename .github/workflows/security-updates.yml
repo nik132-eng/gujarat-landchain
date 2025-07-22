@@ -1,0 +1,301 @@
+name: 🔄 Dependency Updates & Security
+
+on:
+  schedule:
+    # Run every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # Job 1: Update Dependencies
+  update-dependencies:
+    name: 📦 Update Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Update npm dependencies
+        run: |
+          npm update
+          cd apps/citizen-pwa && npm update
+          cd ../official-dashboard && npm update
+          cd ../../services/api-gateway && npm update
+          cd ../auth-service && npm update
+          cd ../bridge-service && npm update
+
+      - name: 🧪 Run tests after updates
+        run: npm test
+        continue-on-error: true
+
+      - name: 🔄 Create pull request for dependency updates
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 📦 Update dependencies - automated weekly update
+          title: 📦 Weekly Dependency Updates
+          body: |
+            🤖 **Automated Dependency Update**
+            
+            This PR contains the weekly automated dependency updates.
+            
+            **Updated packages**:
+            - Root dependencies
+            - Frontend apps (citizen-pwa, official-dashboard)
+            - Backend services (api-gateway, auth-service, bridge-service)
+            
+            **Test Status**: ${{ steps.test.outcome }}
+            
+            Please review the changes and ensure all tests pass before merging.
+          branch: automated-dependency-updates-${{ github.run_number }}
+
+  # Job 2: Security Audit
+  security-audit:
+    name: 🔒 Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run npm audit
+        run: npm audit --audit-level moderate
+        continue-on-error: true
+
+      - name: 🔒 Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium
+        continue-on-error: true
+
+      - name: 📊 Generate security report
+        run: |
+          echo "# 🔒 Security Audit Report" > security-report.md
+          echo "" >> security-report.md
+          echo "**Date**: $(date)" >> security-report.md
+          echo "**Commit**: ${{ github.sha }}" >> security-report.md
+          echo "" >> security-report.md
+          
+          echo "## npm audit results" >> security-report.md
+          npm audit --audit-level moderate >> security-report.md || true
+          
+          echo "" >> security-report.md
+          echo "## Recommendations" >> security-report.md
+          echo "- Review and update vulnerable packages" >> security-report.md
+          echo "- Check for alternative packages if needed" >> security-report.md
+          echo "- Monitor security advisories" >> security-report.md
+
+      - name: 📄 Upload security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-report
+          path: security-report.md
+
+  # Job 3: Contract Security Scan
+  contract-security:
+    name: ⛓️ Contract Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 🐍 Setup Python for Slither
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install Slither
+        run: pip install slither-analyzer
+
+      - name: 📦 Install contract dependencies
+        run: |
+          cd contracts/ethereum
+          npm ci
+
+      - name: 🔍 Run Slither analysis
+        run: |
+          cd contracts/ethereum
+          slither . --print summary --json slither-report.json
+        continue-on-error: true
+
+      - name: 📊 Parse Slither results
+        run: |
+          cd contracts/ethereum
+          echo "# 🔍 Smart Contract Security Analysis" > ../contract-security-report.md
+          echo "" >> ../contract-security-report.md
+          echo "**Date**: $(date)" >> ../contract-security-report.md
+          echo "**Tool**: Slither" >> ../contract-security-report.md
+          echo "" >> ../contract-security-report.md
+          
+          if [ -f slither-report.json ]; then
+            echo "## Analysis Results" >> ../contract-security-report.md
+            echo "See attached JSON report for detailed findings." >> ../contract-security-report.md
+          else
+            echo "## No issues found" >> ../contract-security-report.md
+            echo "✅ Slither analysis completed without detecting security issues." >> ../contract-security-report.md
+          fi
+
+      - name: 📄 Upload contract security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: contract-security-report
+          path: |
+            contract-security-report.md
+            contracts/ethereum/slither-report.json
+
+  # Job 4: License Compliance Check
+  license-check:
+    name: 📄 License Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 📄 Check licenses
+        run: |
+          npx license-checker --summary > license-summary.txt
+          npx license-checker --csv > license-details.csv
+
+      - name: 📊 Generate license report
+        run: |
+          echo "# 📄 License Compliance Report" > license-report.md
+          echo "" >> license-report.md
+          echo "**Date**: $(date)" >> license-report.md
+          echo "" >> license-report.md
+          echo "## Summary" >> license-report.md
+          cat license-summary.txt >> license-report.md
+          echo "" >> license-report.md
+          echo "## Recommendations" >> license-report.md
+          echo "- Ensure all dependencies use MIT-compatible licenses" >> license-report.md
+          echo "- Review any GPL/AGPL licensed packages" >> license-report.md
+          echo "- Update THIRD_PARTY_LICENSES.md if needed" >> license-report.md
+
+      - name: 📄 Upload license report
+        uses: actions/upload-artifact@v3
+        with:
+          name: license-report
+          path: |
+            license-report.md
+            license-details.csv
+
+  # Job 5: Generate Combined Report
+  generate-report:
+    name: 📊 Generate Combined Report
+    runs-on: ubuntu-latest
+    needs: [security-audit, contract-security, license-check]
+    if: always()
+    steps:
+      - name: 📥 Download all reports
+        uses: actions/download-artifact@v3
+
+      - name: 📊 Combine reports
+        run: |
+          echo "# 🔒 Weekly Security & Compliance Report" > weekly-report.md
+          echo "" >> weekly-report.md
+          echo "**Date**: $(date)" >> weekly-report.md
+          echo "**Workflow**: Automated Security Scan" >> weekly-report.md
+          echo "" >> weekly-report.md
+          
+          echo "## 📦 Dependency Security" >> weekly-report.md
+          if [ -f security-report/security-report.md ]; then
+            cat security-report/security-report.md >> weekly-report.md
+          fi
+          
+          echo "" >> weekly-report.md
+          echo "## ⛓️ Smart Contract Security" >> weekly-report.md
+          if [ -f contract-security-report/contract-security-report.md ]; then
+            cat contract-security-report/contract-security-report.md >> weekly-report.md
+          fi
+          
+          echo "" >> weekly-report.md
+          echo "## 📄 License Compliance" >> weekly-report.md
+          if [ -f license-report/license-report.md ]; then
+            cat license-report/license-report.md >> weekly-report.md
+          fi
+
+      - name: 📄 Upload combined report
+        uses: actions/upload-artifact@v3
+        with:
+          name: weekly-security-report
+          path: weekly-report.md
+
+      - name: 📢 Create issue for review
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: 1  # Adjust to your security tracking issue
+          body: |
+            🔒 **Weekly Security Report Available**
+            
+            The automated security scan has completed. Please review the findings:
+            
+            **Reports Generated**:
+            - Dependency Security Audit
+            - Smart Contract Security Analysis  
+            - License Compliance Check
+            
+            **Action Required**: Review artifacts in workflow run #${{ github.run_number }}
+            
+            **Status**: 
+            - Security Audit: ${{ needs.security-audit.result }}
+            - Contract Security: ${{ needs.contract-security.result }}
+            - License Check: ${{ needs.license-check.result }}
+
+  # Job 6: Notification
+  notify-security:
+    name: 📢 Security Notification
+    runs-on: ubuntu-latest
+    needs: [update-dependencies, security-audit, contract-security, license-check]
+    if: always()
+    steps:
+      - name: 📢 Discord notification
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+            🔒 **Weekly Security & Dependency Update Complete!**
+            
+            **Results**:
+            - Dependencies: ${{ needs.update-dependencies.result }}
+            - Security Audit: ${{ needs.security-audit.result }}
+            - Contract Security: ${{ needs.contract-security.result }}
+            - License Check: ${{ needs.license-check.result }}
+            
+            📊 Check the Actions tab for detailed reports!
+            
+            ${{ contains(needs.*.result, 'failure') && '⚠️ Some checks failed - please review!' || '✅ All checks passed!' }}

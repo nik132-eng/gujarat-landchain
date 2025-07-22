@@ -1,0 +1,233 @@
+name: 🔗 Smart Contract Deployment
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'contracts/**'
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Network to deploy to'
+        required: true
+        default: 'testnet'
+        type: choice
+        options:
+        - testnet
+        - mainnet
+
+env:
+  NODE_VERSION: '20'
+  RUST_VERSION: 'stable'
+
+jobs:
+  # Job 1: Deploy Ethereum/Polygon Contracts
+  deploy-ethereum:
+    name: 🔷 Deploy Ethereum Contracts
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.network || 'testnet' }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          cd contracts/ethereum
+          npm ci
+
+      - name: 🔧 Configure network
+        run: |
+          cd contracts/ethereum
+          if [ "${{ github.event.inputs.network || 'testnet' }}" == "testnet" ]; then
+            echo "Deploying to Polygon Mumbai testnet..."
+            export NETWORK="mumbai"
+          else
+            echo "Deploying to Polygon mainnet..."
+            export NETWORK="polygon"
+          fi
+          echo "NETWORK=$NETWORK" >> $GITHUB_ENV
+
+      - name: 🏗️ Compile contracts
+        run: |
+          cd contracts/ethereum
+          npx hardhat compile
+
+      - name: 🧪 Run final tests
+        run: |
+          cd contracts/ethereum
+          npx hardhat test
+
+      - name: 🚀 Deploy LandNFT contract
+        run: |
+          cd contracts/ethereum
+          npx hardhat run scripts/deploy-land-nft.js --network ${{ env.NETWORK }}
+        env:
+          PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
+
+      - name: 🚀 Deploy FreezeTimer contract
+        run: |
+          cd contracts/ethereum
+          npx hardhat run scripts/deploy-freeze-timer.js --network ${{ env.NETWORK }}
+        env:
+          PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          POLYGON_RPC_URL: ${{ secrets.POLYGON_RPC_URL }}
+
+      - name: ✅ Verify contracts
+        run: |
+          cd contracts/ethereum
+          npx hardhat verify --network ${{ env.NETWORK }} $LAND_NFT_ADDRESS
+          npx hardhat verify --network ${{ env.NETWORK }} $FREEZE_TIMER_ADDRESS
+        continue-on-error: true
+
+      - name: 📄 Update contract addresses
+        run: |
+          echo "📋 Contract Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Contract | Address | Network |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|---------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| LandNFT | $LAND_NFT_ADDRESS | ${{ env.NETWORK }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| FreezeTimer | $FREEZE_TIMER_ADDRESS | ${{ env.NETWORK }} |" >> $GITHUB_STEP_SUMMARY
+
+  # Job 2: Deploy Solana Programs
+  deploy-solana:
+    name: 🟣 Deploy Solana Programs
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.network || 'testnet' }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🦀 Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          profile: minimal
+          override: true
+
+      - name: 📦 Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v1.17.0/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: 📦 Install Anchor CLI
+        run: npm install -g @coral-xyz/anchor-cli
+
+      - name: 🔧 Configure Solana network
+        run: |
+          if [ "${{ github.event.inputs.network || 'testnet' }}" == "testnet" ]; then
+            solana config set --url devnet
+            echo "SOLANA_NETWORK=devnet" >> $GITHUB_ENV
+          else
+            solana config set --url mainnet-beta
+            echo "SOLANA_NETWORK=mainnet-beta" >> $GITHUB_ENV
+          fi
+
+      - name: 🔑 Configure wallet
+        run: |
+          echo "${{ secrets.SOLANA_PRIVATE_KEY }}" > /tmp/solana-keypair.json
+          solana config set --keypair /tmp/solana-keypair.json
+
+      - name: 💰 Check wallet balance
+        run: |
+          BALANCE=$(solana balance)
+          echo "Wallet balance: $BALANCE"
+          if [ "${{ env.SOLANA_NETWORK }}" == "devnet" ]; then
+            solana airdrop 2
+          fi
+
+      - name: 🏗️ Build Solana programs
+        run: |
+          cd contracts/solana
+          anchor build
+
+      - name: 🧪 Run final tests
+        run: |
+          cd contracts/solana
+          anchor test --skip-local-validator
+
+      - name: 🚀 Deploy Treasury program
+        run: |
+          cd contracts/solana
+          anchor deploy --program-name treasury --provider.cluster ${{ env.SOLANA_NETWORK }}
+
+      - name: 🚀 Deploy Bridge program
+        run: |
+          cd contracts/solana
+          anchor deploy --program-name bridge --provider.cluster ${{ env.SOLANA_NETWORK }}
+
+      - name: 📄 Update program IDs
+        run: |
+          cd contracts/solana
+          echo "📋 Solana Program Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Program | Program ID | Network |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|------------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Treasury | $(solana address -k target/deploy/treasury-keypair.json) | ${{ env.SOLANA_NETWORK }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Bridge | $(solana address -k target/deploy/bridge-keypair.json) | ${{ env.SOLANA_NETWORK }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 🧹 Cleanup
+        run: rm -f /tmp/solana-keypair.json
+
+  # Job 3: Update Configuration
+  update-config:
+    name: ⚙️ Update Configuration
+    runs-on: ubuntu-latest
+    needs: [deploy-ethereum, deploy-solana]
+    if: always() && (needs.deploy-ethereum.result == 'success' || needs.deploy-solana.result == 'success')
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📝 Update contract addresses in config
+        run: |
+          echo "Updating contract configuration..."
+          # This would update the contract addresses in the frontend config
+          # Implementation depends on how you store the addresses
+
+      - name: 🔄 Create pull request with updated addresses
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 📝 Update contract addresses after deployment
+          title: 📝 Update contract addresses - ${{ github.event.inputs.network || 'testnet' }}
+          body: |
+            🚀 **Automated Contract Address Update**
+            
+            This PR updates the contract addresses after successful deployment to ${{ github.event.inputs.network || 'testnet' }}.
+            
+            **Network**: ${{ github.event.inputs.network || 'testnet' }}
+            **Commit**: ${{ github.sha }}
+            
+            Please review and merge to update the frontend configuration.
+          branch: update-contract-addresses-${{ github.run_number }}
+
+  # Job 4: Notification
+  notify-deployment:
+    name: 📢 Notify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-ethereum, deploy-solana, update-config]
+    if: always()
+    steps:
+      - name: 📢 Discord notification
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+            🔗 **Smart Contract Deployment Complete!**
+            
+            **Network**: ${{ github.event.inputs.network || 'testnet' }}
+            **Commit**: `${{ github.sha }}`
+            **Status**: ${{ job.status }}
+            
+            **Ethereum**: ${{ needs.deploy-ethereum.result }}
+            **Solana**: ${{ needs.deploy-solana.result }}
+            
+            Check the Actions tab for contract addresses! 📋
