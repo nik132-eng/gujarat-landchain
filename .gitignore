@@ -1,6 +1,18 @@
 # Gujarat LandChain - Dependencies
 # Only ignore specific files/directories instead of everything
 
+# Documentation files (personal use)
+docs/
+*.md
+!README.md
+*.ipynb
+
+# Configuration files that should not be tracked
+Project.toml
+docker-compose.yml
+tsconfig.json
+turbo.json
+
 # Keep essential directories and implementation files
 !julia/
 !contracts/
@@ -11,7 +23,6 @@
 !apps/
 !packages/
 !src/
-!docs/
 !tests/
 !scripts/
 !.github/
@@ -21,6 +32,13 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+
+# Build artifacts
+artifacts/
+cache/
+dist/
+build/
 
 # Julia
 .julia/

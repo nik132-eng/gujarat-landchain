@@ -1,0 +1,50 @@
+name = "ai-service"
+version = "0.1.0"
+description = "AI-powered validation service for Gujarat LandChain"
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project]
+name = "ai-service"
+version = "0.1.0"
+authors = [
+    {name = "Gujarat LandChain Team"},
+]
+description = "AI-powered validation service"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi==0.104.1",
+    "uvicorn[standard]==0.24.0",
+    "pydantic==2.5.0",
+    "httpx==0.25.2",
+    "numpy==1.24.3",
+    "opencv-python==4.8.1.78",
+    "Pillow==10.1.0",
+    "ultralytics==8.0.206",
+    "torch==2.1.1",
+    "torchvision==0.16.1",
+    "rasterio==1.3.9",
+    "geopandas==0.14.1",
+    "shapely==2.0.2",
+    "pystac-client==0.7.5",
+    "langchain==0.0.335",
+    "langchain-openai==0.0.2",
+    "python-multipart==0.0.6",
+    "ipfshttpclient==0.8.0a2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==7.4.3",
+    "pytest-asyncio==0.21.1",
+    "black==23.11.0",
+    "isort==5.12.0",
+    "flake8==6.1.0",
+    "mypy==1.7.1",
+]
