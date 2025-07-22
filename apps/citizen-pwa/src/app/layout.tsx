@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import Navigation from '@/components/Navigation'
+import SolanaWalletProvider from '@/components/SolanaWalletProvider'
 
 export const metadata: Metadata = {
   title: 'Gujarat LandChain - Citizen Portal',
@@ -38,8 +39,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-gray-50 text-gray-900 antialiased">
-        <Navigation />
-        {children}
+        <SolanaWalletProvider>
+          <Navigation />
+          {children}
+        </SolanaWalletProvider>
       </body>
     </html>
   )

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 
 const navigation = [
   { name: 'Home', href: '/', icon: '🏠' },
@@ -31,31 +32,39 @@ export default function Navigation() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-gujarat-blue-50 text-gujarat-blue-600'
-                      : 'text-gray-600 hover:text-gujarat-blue-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <span>{item.icon}</span>
-                  <span>{item.name}</span>
-                </Link>
-              )
-            })}
+                    {/* Desktop Navigation */}
+          <div className="hidden lg:flex lg:items-center lg:space-x-8">
+            <Link 
+              href="/" 
+              className="text-white hover:text-gujarat-saffron-200 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Home
+            </Link>
+            <Link 
+              href="/map" 
+              className="text-white hover:text-gujarat-saffron-200 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Property Map
+            </Link>
+            <Link 
+              href="/transfers" 
+              className="text-white hover:text-gujarat-saffron-200 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Transfers
+            </Link>
+            <Link 
+              href="/wallet" 
+              className="text-white hover:text-gujarat-saffron-200 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Wallet
+            </Link>
           </div>
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <button className="btn-secondary hidden md:block">
-              Connect Wallet
-            </button>
+            <div className="hidden md:block">
+              <WalletMultiButton className="!bg-gujarat-saffron-500 hover:!bg-gujarat-saffron-600 !rounded-lg !px-4 !py-2 !text-sm !font-medium !transition-colors" />
+            </div>
             
             {/* Mobile menu button */}
             <div className="md:hidden">
@@ -99,9 +108,7 @@ export default function Navigation() {
               )
             })}
             <div className="px-3 py-2">
-              <button className="btn-primary w-full">
-                Connect Wallet
-              </button>
+              <WalletMultiButton className="!bg-gujarat-saffron-500 hover:!bg-gujarat-saffron-600 !rounded-lg !px-4 !py-2 !text-sm !font-medium !transition-colors !w-full" />
             </div>
           </div>
         </div>

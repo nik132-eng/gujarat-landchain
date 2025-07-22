@@ -51,10 +51,10 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "turbo": "^2.0.0",
-    "typescript": "^5.8.3",
     "eslint": "^8.0.0",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.8.3"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -67,5 +67,8 @@
   "bugs": {
     "url": "https://github.com/gujarat-landchain/juliaos-dapp/issues"
   },
-  "homepage": "https://landchain.gujarat.gov.in"
+  "homepage": "https://landchain.gujarat.gov.in",
+  "dependencies": {
+    "@solana/wallet-adapter-wallets": "^0.19.37"
+  }
 }
