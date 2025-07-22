@@ -1,0 +1,548 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ULPIN Land Parcel NFT Metadata Schema",
+  "description": "Comprehensive metadata schema for ULPIN (Unique Land Parcel Identification Number) NFTs representing land parcels in Gujarat, India",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["name", "description", "image", "ulpin", "coordinates", "area", "land_type"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the land parcel",
+      "pattern": "^ULPIN-[0-9]{12}-[A-Z0-9]{6}$",
+      "examples": ["ULPIN-240123456789-ABC123", "ULPIN-240234567890-XYZ789"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the land parcel including location and characteristics",
+      "maxLength": 2000,
+      "examples": ["Agricultural land parcel of 2.5 acres in Ahmedabad district, Village Bavla, suitable for organic farming with water access."]
+    },
+    "image": {
+      "type": "string",
+      "format": "uri",
+      "description": "IPFS URL to the primary satellite/aerial image of the land parcel",
+      "pattern": "^ipfs://",
+      "examples": ["ipfs://QmSatelliteImageHash123ABC"]
+    },
+    "external_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to the official land records portal or property details page",
+      "examples": ["https://landrecords.gujarat.gov.in/parcel/ULPIN-240123456789-ABC123"]
+    },
+    "animation_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "3D model or time-lapse satellite imagery URL",
+      "examples": ["ipfs://QmTimeLapseVideo123", "ipfs://Qm3DModel456"]
+    },
+    
+    "ulpin": {
+      "type": "object",
+      "description": "Unique Land Parcel Identification Number details",
+      "required": ["id", "state_code", "district_code", "village_code", "survey_number"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9]{12}$",
+          "description": "12-digit unique ULPIN identifier",
+          "examples": ["240123456789"]
+        },
+        "state_code": {
+          "type": "string",
+          "pattern": "^24$",
+          "description": "Gujarat state code (24)",
+          "const": "24"
+        },
+        "district_code": {
+          "type": "string",
+          "pattern": "^[0-9]{2}$",
+          "description": "2-digit district code within Gujarat",
+          "examples": ["01", "15", "33"]
+        },
+        "village_code": {
+          "type": "string", 
+          "pattern": "^[0-9]{6}$",
+          "description": "6-digit village code",
+          "examples": ["123456", "789012"]
+        },
+        "survey_number": {
+          "type": "string",
+          "pattern": "^[0-9]{1,4}(/[0-9]{1,2})?$",
+          "description": "Land survey number with optional subdivision",
+          "examples": ["123", "456/1", "789/12"]
+        },
+        "sub_division": {
+          "type": "string",
+          "description": "Sub-division identifier if applicable",
+          "examples": ["A", "B1", "C2"]
+        }
+      }
+    },
+
+    "coordinates": {
+      "type": "object",
+      "description": "Geographic coordinates and boundary information",
+      "required": ["center", "boundary"],
+      "properties": {
+        "center": {
+          "type": "object",
+          "required": ["latitude", "longitude"],
+          "properties": {
+            "latitude": {
+              "type": "number",
+              "minimum": 20.0,
+              "maximum": 25.0,
+              "description": "Center latitude (Gujarat bounds: 20-25°N)",
+              "examples": [23.0225, 22.3072]
+            },
+            "longitude": {
+              "type": "number", 
+              "minimum": 68.0,
+              "maximum": 75.0,
+              "description": "Center longitude (Gujarat bounds: 68-75°E)",
+              "examples": [72.5714, 70.8022]
+            }
+          }
+        },
+        "boundary": {
+          "type": "array",
+          "description": "Polygon boundary coordinates (GeoJSON format)",
+          "minItems": 4,
+          "items": {
+            "type": "object",
+            "required": ["latitude", "longitude"],
+            "properties": {
+              "latitude": {"type": "number"},
+              "longitude": {"type": "number"}
+            }
+          }
+        },
+        "area_calculated": {
+          "type": "number",
+          "description": "Calculated area from boundary coordinates (in sq meters)",
+          "minimum": 0
+        }
+      }
+    },
+
+    "area": {
+      "type": "object",
+      "description": "Land area measurements",
+      "required": ["hectares", "unit"],
+      "properties": {
+        "hectares": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Area in hectares (official measurement)",
+          "examples": [1.0, 2.5, 0.25]
+        },
+        "acres": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Area in acres (commonly used)",
+          "examples": [2.47, 6.18, 0.62]
+        },
+        "square_meters": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Area in square meters",
+          "examples": [10000, 25000, 2500]
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["hectares", "acres", "square_meters"],
+          "description": "Primary unit of measurement"
+        }
+      }
+    },
+
+    "land_type": {
+      "type": "object",
+      "description": "Land classification and usage",
+      "required": ["primary_use", "soil_type"],
+      "properties": {
+        "primary_use": {
+          "type": "string",
+          "enum": ["agricultural", "residential", "commercial", "industrial", "forest", "water_body", "government", "religious"],
+          "description": "Primary land use classification"
+        },
+        "secondary_use": {
+          "type": "string",
+          "description": "Secondary or mixed use if applicable"
+        },
+        "soil_type": {
+          "type": "string",
+          "enum": ["alluvial", "black_cotton", "red", "laterite", "sandy", "clayey", "loamy"],
+          "description": "Soil classification"
+        },
+        "irrigation": {
+          "type": "object",
+          "properties": {
+            "available": {"type": "boolean"},
+            "source": {
+              "type": "string",
+              "enum": ["canal", "tube_well", "open_well", "rain_fed", "river", "pond"]
+            },
+            "quality": {
+              "type": "string",
+              "enum": ["excellent", "good", "fair", "poor"]
+            }
+          }
+        }
+      }
+    },
+
+    "ownership": {
+      "type": "object",
+      "description": "Ownership and legal information",
+      "required": ["type", "rights"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["private", "government", "community", "joint", "disputed"],
+          "description": "Type of ownership"
+        },
+        "rights": {
+          "type": "string", 
+          "enum": ["full_ownership", "leasehold", "tenant", "mortgaged", "joint_ownership"],
+          "description": "Rights associated with the land"
+        },
+        "encumbrance": {
+          "type": "boolean",
+          "description": "Whether land has any legal encumbrance"
+        },
+        "mutation_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of ownership mutations/transfers"
+        }
+      }
+    },
+
+    "satellite_imagery": {
+      "type": "object",
+      "description": "Satellite imagery and remote sensing data",
+      "required": ["primary_image"],
+      "properties": {
+        "primary_image": {
+          "type": "object",
+          "required": ["ipfs_hash", "capture_date", "resolution"],
+          "properties": {
+            "ipfs_hash": {
+              "type": "string",
+              "pattern": "^Qm[1-9A-HJ-NP-Za-km-z]{44}$",
+              "description": "IPFS hash of the primary satellite image"
+            },
+            "capture_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Date when satellite image was captured (YYYY-MM-DD)"
+            },
+            "resolution": {
+              "type": "number",
+              "description": "Image resolution in meters per pixel",
+              "examples": [0.5, 1.0, 10.0]
+            },
+            "satellite_source": {
+              "type": "string",
+              "enum": ["sentinel-2", "landsat-8", "worldview", "ikonos", "cartosat", "resourcesat"],
+              "description": "Satellite source of the imagery"
+            }
+          }
+        },
+        "historical_images": {
+          "type": "array",
+          "description": "Array of historical satellite images",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ipfs_hash": {"type": "string"},
+              "capture_date": {"type": "string", "format": "date"},
+              "resolution": {"type": "number"},
+              "satellite_source": {"type": "string"}
+            }
+          }
+        },
+        "ai_analysis": {
+          "type": "object",
+          "description": "AI-powered analysis of satellite imagery",
+          "properties": {
+            "crop_detection": {
+              "type": "object",
+              "properties": {
+                "detected_crops": {"type": "array", "items": {"type": "string"}},
+                "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                "analysis_date": {"type": "string", "format": "date"}
+              }
+            },
+            "land_cover": {
+              "type": "object",
+              "properties": {
+                "vegetation_percentage": {"type": "number", "minimum": 0, "maximum": 100},
+                "built_up_percentage": {"type": "number", "minimum": 0, "maximum": 100},
+                "water_percentage": {"type": "number", "minimum": 0, "maximum": 100},
+                "bare_soil_percentage": {"type": "number", "minimum": 0, "maximum": 100}
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "valuation": {
+      "type": "object",
+      "description": "Land valuation and pricing information",
+      "properties": {
+        "market_value": {
+          "type": "object",
+          "properties": {
+            "amount": {"type": "number", "minimum": 0},
+            "currency": {"type": "string", "const": "INR"},
+            "per_unit": {"type": "string", "enum": ["per_hectare", "per_acre", "total"]},
+            "valuation_date": {"type": "string", "format": "date"},
+            "assessor": {"type": "string"}
+          }
+        },
+        "government_value": {
+          "type": "object",
+          "properties": {
+            "circle_rate": {"type": "number", "minimum": 0},
+            "stamp_duty_value": {"type": "number", "minimum": 0},
+            "last_updated": {"type": "string", "format": "date"}
+          }
+        }
+      }
+    },
+
+    "administrative": {
+      "type": "object",
+      "description": "Administrative and location details",
+      "required": ["district", "taluka", "village"],
+      "properties": {
+        "state": {
+          "type": "string",
+          "const": "Gujarat",
+          "description": "State name"
+        },
+        "district": {
+          "type": "string",
+          "description": "District name",
+          "examples": ["Ahmedabad", "Surat", "Vadodara", "Rajkot"]
+        },
+        "taluka": {
+          "type": "string",
+          "description": "Taluka/Tehsil name",
+          "examples": ["Bavla", "Sanand", "Dholka"]
+        },
+        "village": {
+          "type": "string",
+          "description": "Village name",
+          "examples": ["Bavla", "Changodar", "Vasna"]
+        },
+        "pincode": {
+          "type": "string",
+          "pattern": "^[0-9]{6}$",
+          "description": "6-digit postal code"
+        }
+      }
+    },
+
+    "attributes": {
+      "type": "array",
+      "description": "NFT attributes for marketplace display (OpenSea compatible)",
+      "items": {
+        "type": "object",
+        "required": ["trait_type", "value"],
+        "properties": {
+          "trait_type": {
+            "type": "string",
+            "enum": [
+              "Land Type", "Soil Type", "District", "Area (Hectares)", 
+              "Irrigation Available", "Market Value (Lakhs)", "ULPIN State",
+              "Satellite Resolution", "Ownership Type", "Crop Type",
+              "Land Cover", "Valuation Year", "Mutation Count"
+            ]
+          },
+          "value": {
+            "oneOf": [
+              {"type": "string"}, 
+              {"type": "number"}, 
+              {"type": "boolean"}
+            ]
+          },
+          "display_type": {
+            "type": "string",
+            "enum": ["number", "boost_number", "boost_percentage", "date"]
+          },
+          "max_value": {"type": "number"}
+        }
+      }
+    },
+
+    "juliaos_integration": {
+      "type": "object",
+      "description": "JuliaOS-specific metadata for agent interactions",
+      "properties": {
+        "mint_agent": {
+          "type": "object",
+          "properties": {
+            "agent_id": {"type": "string"},
+            "mint_timestamp": {"type": "string", "format": "date-time"},
+            "validation_score": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        },
+        "satellite_agent": {
+          "type": "object", 
+          "properties": {
+            "last_analysis": {"type": "string", "format": "date-time"},
+            "next_scheduled": {"type": "string", "format": "date-time"},
+            "analysis_frequency": {"type": "string", "enum": ["weekly", "monthly", "quarterly", "annually"]}
+          }
+        },
+        "validation_swarm": {
+          "type": "object",
+          "properties": {
+            "consensus_score": {"type": "number", "minimum": 0, "maximum": 1},
+            "validator_count": {"type": "integer", "minimum": 0},
+            "last_validation": {"type": "string", "format": "date-time"}
+          }
+        }
+      }
+    },
+
+    "blockchain": {
+      "type": "object",
+      "description": "Blockchain-specific metadata",
+      "required": ["network", "contract_address"],
+      "properties": {
+        "network": {
+          "type": "string",
+          "enum": ["polygon", "ethereum", "mumbai", "goerli"],
+          "description": "Blockchain network where NFT is deployed"
+        },
+        "contract_address": {
+          "type": "string",
+          "pattern": "^0x[a-fA-F0-9]{40}$",
+          "description": "Smart contract address"
+        },
+        "token_id": {
+          "type": "string",
+          "description": "Token ID within the contract"
+        },
+        "ipfs_metadata": {
+          "type": "string",
+          "pattern": "^ipfs://",
+          "description": "IPFS hash of this metadata JSON"
+        }
+      }
+    }
+  },
+
+  "additionalProperties": false,
+
+  "examples": [
+    {
+      "name": "ULPIN-240123456789-ABC123",
+      "description": "Premium agricultural land parcel of 2.5 hectares in Bavla village, Ahmedabad district. Black cotton soil with canal irrigation facility. Suitable for cotton and wheat cultivation.",
+      "image": "ipfs://QmSatelliteImagePrimary123ABC",
+      "external_url": "https://landrecords.gujarat.gov.in/parcel/ULPIN-240123456789-ABC123",
+      
+      "ulpin": {
+        "id": "240123456789",
+        "state_code": "24",
+        "district_code": "01", 
+        "village_code": "123456",
+        "survey_number": "123/1"
+      },
+      
+      "coordinates": {
+        "center": {
+          "latitude": 22.8461,
+          "longitude": 72.3809
+        },
+        "boundary": [
+          {"latitude": 22.8465, "longitude": 72.3805},
+          {"latitude": 22.8465, "longitude": 72.3815},
+          {"latitude": 22.8455, "longitude": 72.3815},
+          {"latitude": 22.8455, "longitude": 72.3805},
+          {"latitude": 22.8465, "longitude": 72.3805}
+        ],
+        "area_calculated": 25000
+      },
+      
+      "area": {
+        "hectares": 2.5,
+        "acres": 6.18,
+        "square_meters": 25000,
+        "unit": "hectares"
+      },
+      
+      "land_type": {
+        "primary_use": "agricultural",
+        "soil_type": "black_cotton",
+        "irrigation": {
+          "available": true,
+          "source": "canal",
+          "quality": "good"
+        }
+      },
+      
+      "ownership": {
+        "type": "private",
+        "rights": "full_ownership",
+        "encumbrance": false,
+        "mutation_count": 2
+      },
+      
+      "satellite_imagery": {
+        "primary_image": {
+          "ipfs_hash": "QmSatelliteImagePrimary123ABC",
+          "capture_date": "2024-03-15",
+          "resolution": 1.0,
+          "satellite_source": "sentinel-2"
+        },
+        "ai_analysis": {
+          "crop_detection": {
+            "detected_crops": ["cotton", "wheat"],
+            "confidence": 0.92,
+            "analysis_date": "2024-03-20"
+          },
+          "land_cover": {
+            "vegetation_percentage": 75,
+            "built_up_percentage": 5,
+            "water_percentage": 0,
+            "bare_soil_percentage": 20
+          }
+        }
+      },
+      
+      "administrative": {
+        "state": "Gujarat",
+        "district": "Ahmedabad", 
+        "taluka": "Bavla",
+        "village": "Bavla",
+        "pincode": "382220"
+      },
+      
+      "attributes": [
+        {"trait_type": "Land Type", "value": "Agricultural"},
+        {"trait_type": "Soil Type", "value": "Black Cotton"},
+        {"trait_type": "District", "value": "Ahmedabad"},
+        {"trait_type": "Area (Hectares)", "value": 2.5, "display_type": "number"},
+        {"trait_type": "Irrigation Available", "value": true},
+        {"trait_type": "Satellite Resolution", "value": 1.0, "display_type": "number"},
+        {"trait_type": "Ownership Type", "value": "Private"},
+        {"trait_type": "Crop Type", "value": "Cotton & Wheat"}
+      ],
+      
+      "blockchain": {
+        "network": "polygon",
+        "contract_address": "0x1234567890123456789012345678901234567890",
+        "token_id": "1",
+        "ipfs_metadata": "ipfs://QmMetadataHash123"
+      }
+    }
+  ]
+}

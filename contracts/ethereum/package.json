@@ -1,0 +1,88 @@
+{
+  "name": "@landchain/contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for Gujarat LandChain × JuliaOS project",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test/**/*.test.js --timeout 30000",
+    "test:watch": "mocha test/**/*.test.js --watch",
+    "test:coverage": "nyc mocha test/**/*.test.js",
+    "validate:schemas": "npm run test -- --grep 'Schema Validation'",
+    "validate:metadata": "npm run test -- --grep 'Metadata Validation'",
+    "compile": "hardhat compile",
+    "compile:ethereum": "hardhat compile",
+    "deploy": "npm run deploy:mumbai",
+    "deploy:mumbai": "hardhat run scripts/deploy.js --network mumbai",
+    "deploy:polygon": "hardhat run scripts/deploy.js --network polygon",
+    "verify": "npm run verify:mumbai",
+    "verify:mumbai": "node scripts/verify.js",
+    "verify:polygon": "hardhat verify --network polygon",
+    "deploy:verify": "npm run deploy && npm run verify",
+    "flatten": "hardhat flatten > flattened-contracts.sol",
+    "size": "hardhat size-contracts",
+    "gas": "hardhat gas-reporter",
+    "slither": "slither .",
+    "mythril": "myth analyze contracts/",
+    "lint": "solhint 'contracts/**/*.sol'",
+    "lint:fix": "solhint 'contracts/**/*.sol' --fix",
+    "format": "prettier --write 'contracts/**/*.sol' 'test/**/*.js'",
+    "clean": "hardhat clean",
+    "precheck": "npm run lint && npm run compile",
+    "predeploy": "npm run precheck"
+  },
+  "keywords": [
+    "blockchain",
+    "nft",
+    "land-records",
+    "gujarat",
+    "ulpin",
+    "defi",
+    "polygon",
+    "ethereum",
+    "juliaos"
+  ],
+  "author": "Gujarat LandChain Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "@openzeppelin/test-helpers": "^0.5.16",
+    "ajv": "^8.12.0",
+    "ajv-formats": "^2.1.1",
+    "chai": "^4.3.7",
+    "hardhat": "^2.19.0",
+    "hardhat-gas-reporter": "^1.0.9",
+    "hardhat-contract-sizer": "^2.10.0",
+    "mocha": "^10.2.0",
+    "nyc": "^15.1.0",
+    "prettier": "^3.0.0",
+    "prettier-plugin-solidity": "^1.1.3",
+    "solhint": "^4.0.0",
+    "solidity-coverage": "^0.8.5"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^0.8.0",
+    "dotenv": "^16.3.1"
+  },
+  "nyc": {
+    "exclude": [
+      "test/**",
+      "scripts/**",
+      "node_modules/**"
+    ],
+    "reporter": [
+      "html",
+      "text",
+      "lcov"
+    ],
+    "check-coverage": true,
+    "lines": 80,
+    "statements": 80,
+    "functions": 80,
+    "branches": 80
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

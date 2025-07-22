@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenSea ERC-721 Metadata Standard",
+  "description": "Standard metadata schema for ERC-721 tokens compatible with OpenSea marketplace",
+  "type": "object",
+  "required": ["name", "description", "image"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the item",
+      "maxLength": 100,
+      "examples": ["My NFT #1", "Cool Land Parcel"]
+    },
+    "description": {
+      "type": "string", 
+      "description": "Human readable description of the item",
+      "maxLength": 1000,
+      "examples": ["This is a unique digital asset representing..."]
+    },
+    "image": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to the image of the item (IPFS, HTTP, or data URLs supported)",
+      "examples": ["ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG", "https://example.com/image.png"]
+    },
+    "external_url": {
+      "type": "string",
+      "format": "uri", 
+      "description": "URL that will appear below the asset's image on OpenSea",
+      "examples": ["https://myproject.com/token/1"]
+    },
+    "animation_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to a multi-media attachment for the item (HTML, video, audio, 3D models)",
+      "examples": ["ipfs://QmVideo123", "https://example.com/video.mp4"]
+    },
+    "youtube_url": {
+      "type": "string", 
+      "format": "uri",
+      "description": "YouTube video URL that will be displayed in the item's page",
+      "pattern": "^https://(www\\.)?youtube\\.com/watch\\?v=",
+      "examples": ["https://www.youtube.com/watch?v=abc123"]
+    },
+    "background_color": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{6}$",
+      "description": "Six-character hexadecimal color without # prefix for OpenSea background",
+      "examples": ["FF0000", "00FF00", "0000FF"]
+    },
+    "attributes": {
+      "type": "array",
+      "description": "Array of attributes that define the characteristics of the item",
+      "items": {
+        "type": "object",
+        "required": ["trait_type", "value"],
+        "properties": {
+          "trait_type": {
+            "type": "string",
+            "description": "Name of the trait/attribute",
+            "examples": ["Color", "Rarity", "Level"]
+          },
+          "value": {
+            "oneOf": [
+              {"type": "string"},
+              {"type": "number"},
+              {"type": "boolean"}
+            ],
+            "description": "Value of the trait (string, number, or boolean)",
+            "examples": ["Blue", 85, true]
+          },
+          "display_type": {
+            "type": "string",
+            "enum": ["number", "boost_number", "boost_percentage", "date"],
+            "description": "How OpenSea should display the attribute"
+          },
+          "max_value": {
+            "type": "number",
+            "description": "Maximum value for progress bar display (used with display_type: number)"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true,
+  "examples": [
+    {
+      "name": "Sample NFT",
+      "description": "This is a sample NFT following OpenSea standard",
+      "image": "ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+      "external_url": "https://example.com",
+      "background_color": "FF0000",
+      "attributes": [
+        {
+          "trait_type": "Color",
+          "value": "Red"
+        },
+        {
+          "trait_type": "Level", 
+          "value": 5,
+          "display_type": "number",
+          "max_value": 10
+        },
+        {
+          "trait_type": "Boost",
+          "value": 15,
+          "display_type": "boost_percentage"
+        },
+        {
+          "trait_type": "Created",
+          "value": 1672531200,
+          "display_type": "date"
+        }
+      ]
+    }
+  ]
+}
