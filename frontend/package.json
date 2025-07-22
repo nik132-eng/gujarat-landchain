@@ -1,0 +1,77 @@
+{
+  "name": "gujarat-landchain-frontend",
+  "version": "1.0.0",
+  "description": "Gujarat LandChain × JuliaOS Frontend - Sprint 6 Implementation",
+  "main": "App.jsx",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "axios": "^1.6.0",
+    "crypto-js": "^4.2.0",
+    "bip39": "^3.1.0",
+    "@ethersproject/hdnode": "^5.7.0",
+    "@ethersproject/wallet": "^5.7.0",
+    "@solana/web3.js": "^1.87.6",
+    "tailwindcss": "^3.3.6",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.1.1",
+    "vite": "^5.0.0",
+    "eslint": "^8.53.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/user-event": "^14.5.1"
+  },
+  "keywords": [
+    "gujarat",
+    "landchain",
+    "blockchain",
+    "juliaos",
+    "wallet",
+    "aadhaar",
+    "authentication",
+    "jwt",
+    "session-management",
+    "react",
+    "frontend"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gujarat-landchain/AI-DApp-Development.git"
+  },
+  "author": "Gujarat LandChain Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
