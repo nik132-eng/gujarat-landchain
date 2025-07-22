@@ -39,6 +39,9 @@ artifacts/
 cache/
 dist/
 build/
+.next/
+.turbo/
+out/
 
 # Julia
 .julia/
