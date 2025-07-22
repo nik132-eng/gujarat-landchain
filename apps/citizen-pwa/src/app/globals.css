@@ -1,0 +1,97 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+:root {
+  /* Gujarat Government Brand Colors */
+  --gujarat-blue: #1E40AF;
+  --gujarat-blue-light: #3B82F6;
+  --gujarat-blue-dark: #1E3A8A;
+  --gujarat-saffron: #F97316;
+  --gujarat-saffron-light: #FB923C;
+  --gujarat-green: #16A34A;
+  --gujarat-green-light: #22C55E;
+  --gujarat-gold: #EAB308;
+  --gujarat-gold-light: #FDE047;
+}
+
+/* Base layer customizations */
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+  
+  /* Ensure proper font rendering */
+  * {
+    @apply antialiased;
+  }
+  
+  /* Focus visible styles for accessibility */
+  *:focus-visible {
+    @apply ring-2 ring-blue-500 ring-offset-2 outline-none;
+  }
+}
+
+/* Component layer customizations */
+@layer components {
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+  }
+  
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  }
+}
+
+/* Utility layer customizations */
+@layer utilities {
+  .text-gujarat-blue {
+    color: var(--gujarat-blue);
+  }
+  
+  .bg-gujarat-blue {
+    background-color: var(--gujarat-blue);
+  }
+  
+  .text-gujarat-saffron {
+    color: var(--gujarat-saffron);
+  }
+  
+  .bg-gujarat-saffron {
+    background-color: var(--gujarat-saffron);
+  }
+  
+  .gradient-gujarat {
+    background: linear-gradient(135deg, var(--gujarat-blue) 0%, var(--gujarat-saffron) 100%);
+  }
+  
+  /* Mobile-first responsive text sizes */
+  .text-responsive-xl {
+    @apply text-2xl md:text-3xl lg:text-4xl;
+  }
+  
+  .text-responsive-lg {
+    @apply text-xl md:text-2xl lg:text-3xl;
+  }
+  
+  /* Safe area handling for mobile */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
