@@ -1,0 +1,25 @@
+[package]
+name = "ulpin-bridge"
+version = "0.1.0"
+description = "Solana bridge program for cross-chain ULPIN operations"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.29.0"
+anchor-spl = "0.29.0"
+solana-program = "1.16.0"
+thiserror = "1.0"
+borsh = "0.10.3"
+
+[profile.release]
+overflow-checks = true 
