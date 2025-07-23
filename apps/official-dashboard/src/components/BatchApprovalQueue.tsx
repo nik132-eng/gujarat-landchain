@@ -1,341 +1,446 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
+import { useRBAC, Permission } from './RBACSystem';
 
-interface ApprovalItem {
-  id: string
-  ulpin: string
-  propertyTitle: string
-  applicant: string
-  applicationType: 'registration' | 'transfer' | 'modification' | 'dispute_resolution'
-  submittedDate: string
-  priority: 'high' | 'medium' | 'low'
-  status: 'pending' | 'approved' | 'rejected' | 'under_review'
-  aiValidationScore: number
-  swarmConsensusScore: number
-  documents: string[]
-  selected: boolean
-  juliaosAgentValidation: boolean
-  swarmConsensusReached: boolean
-  onchainTransaction?: string
+// Property interface
+interface Property {
+  id: string;
+  ulpinId: string;
+  ownerName: string;
+  surveyNumber: string;
+  village: string;
+  taluka: string;
+  district: string;
+  area: number; // in square meters
+  status: 'pending' | 'approved' | 'rejected' | 'under_review';
+  submittedDate: Date;
+  documents: string[];
+  evidenceBundleId?: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
 }
 
-export default function BatchApprovalQueue() {
-  const [approvalItems, setApprovalItems] = useState<ApprovalItem[]>([])
-  const [selectedItems, setSelectedItems] = useState<string[]>([])
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [filter, setFilter] = useState('all')
-  const [sortBy, setSortBy] = useState('submittedDate')
-  const [showJuliaOSValidation, setShowJuliaOSValidation] = useState(true)
+// Batch operation interface
+interface BatchOperation {
+  id: string;
+  type: 'approve' | 'reject' | 'escalate';
+  properties: string[];
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  createdBy: string;
+  createdAt: Date;
+  completedAt?: Date;
+  errorMessage?: string;
+}
 
-  useEffect(() => {
-    loadApprovalQueue()
-  }, [])
+// Mock data (will be replaced with real backend)
+const MOCK_PROPERTIES: Property[] = [
+  {
+    id: '1',
+    ulpinId: 'GJ-24-001-001-001',
+    ownerName: 'Rajesh Patel',
+    surveyNumber: '123/1',
+    village: 'Vadodara',
+    taluka: 'Vadodara',
+    district: 'Vadodara',
+    area: 2500,
+    status: 'pending',
+    submittedDate: new Date(Date.now() - 86400000), // 1 day ago
+    documents: ['sale-deed.pdf', 'survey-map.pdf'],
+    priority: 'high'
+  },
+  {
+    id: '2',
+    ulpinId: 'GJ-24-001-001-002',
+    ownerName: 'Priya Sharma',
+    surveyNumber: '124/2',
+    village: 'Ahmedabad',
+    taluka: 'Ahmedabad',
+    district: 'Ahmedabad',
+    area: 1800,
+    status: 'pending',
+    submittedDate: new Date(Date.now() - 172800000), // 2 days ago
+    documents: ['inheritance-cert.pdf', 'boundary-map.pdf'],
+    priority: 'medium'
+  },
+  {
+    id: '3',
+    ulpinId: 'GJ-24-001-001-003',
+    ownerName: 'Amit Kumar',
+    surveyNumber: '125/3',
+    village: 'Surat',
+    taluka: 'Surat',
+    district: 'Surat',
+    area: 3200,
+    status: 'pending',
+    submittedDate: new Date(Date.now() - 259200000), // 3 days ago
+    documents: ['gift-deed.pdf', 'satellite-image.pdf'],
+    priority: 'urgent'
+  },
+  {
+    id: '4',
+    ulpinId: 'GJ-24-001-001-004',
+    ownerName: 'Sita Devi',
+    surveyNumber: '126/4',
+    village: 'Rajkot',
+    taluka: 'Rajkot',
+    district: 'Rajkot',
+    area: 1500,
+    status: 'pending',
+    submittedDate: new Date(Date.now() - 345600000), // 4 days ago
+    documents: ['partition-deed.pdf', 'measurement-cert.pdf'],
+    priority: 'low'
+  },
+  {
+    id: '5',
+    ulpinId: 'GJ-24-001-001-005',
+    ownerName: 'Vikram Singh',
+    surveyNumber: '127/5',
+    village: 'Bhavnagar',
+    taluka: 'Bhavnagar',
+    district: 'Bhavnagar',
+    area: 4200,
+    status: 'pending',
+    submittedDate: new Date(Date.now() - 432000000), // 5 days ago
+    documents: ['lease-agreement.pdf', 'site-plan.pdf'],
+    priority: 'high'
+  }
+];
 
-  const loadApprovalQueue = () => {
-    const mockItems: ApprovalItem[] = [
-      {
-        id: '1',
-        ulpin: 'GJ-01-001-2024-001',
-        propertyTitle: 'Residential Plot - Sector 15',
-        applicant: 'Rajesh Patel',
-        applicationType: 'registration',
-        submittedDate: '2024-12-15',
-        priority: 'high',
-        status: 'pending',
-        aiValidationScore: 94.2,
-        swarmConsensusScore: 96.8,
-        documents: ['Survey Report', 'Satellite Image', 'KYC Documents'],
-        selected: false,
-        juliaosAgentValidation: true,
-        swarmConsensusReached: true,
-        onchainTransaction: '0x1234567890abcdef...'
-      },
-      {
-        id: '2',
-        ulpin: 'GJ-01-002-2024-002',
-        propertyTitle: 'Commercial Building - Ahmedabad',
-        applicant: 'Priya Sharma',
-        applicationType: 'transfer',
-        submittedDate: '2024-12-14',
-        priority: 'medium',
-        status: 'pending',
-        aiValidationScore: 91.5,
-        swarmConsensusScore: 93.2,
-        documents: ['Transfer Deed', 'Property Tax Receipt', 'NOC'],
-        selected: false,
-        juliaosAgentValidation: true,
-        swarmConsensusReached: true,
-        onchainTransaction: '0xabcdef1234567890...'
-      },
-      {
-        id: '3',
-        ulpin: 'GJ-01-003-2024-003',
-        propertyTitle: 'Agricultural Land - Vadodara',
-        applicant: 'Amit Kumar',
-        applicationType: 'modification',
-        submittedDate: '2024-12-13',
-        priority: 'low',
-        status: 'under_review',
-        aiValidationScore: 88.7,
-        swarmConsensusScore: 90.1,
-        documents: ['Modification Request', 'Land Use Certificate'],
-        selected: false,
-        juliaosAgentValidation: false,
-        swarmConsensusReached: false
-      },
-      {
-        id: '4',
-        ulpin: 'GJ-01-004-2024-004',
-        propertyTitle: 'IT Park Plot - GIFT City',
-        applicant: 'TechCorp Solutions',
-        applicationType: 'registration',
-        submittedDate: '2024-12-12',
-        priority: 'high',
-        status: 'pending',
-        aiValidationScore: 97.3,
-        swarmConsensusScore: 98.5,
-        documents: ['Corporate Registration', 'Land Allotment Letter'],
-        selected: false,
-        juliaosAgentValidation: true,
-        swarmConsensusReached: true,
-        onchainTransaction: '0x7890abcdef123456...'
-      },
-      {
-        id: '5',
-        ulpin: 'GJ-01-005-2024-005',
-        propertyTitle: 'Residential Complex - Surat',
-        applicant: 'Green Valley Developers',
-        applicationType: 'dispute_resolution',
-        submittedDate: '2024-12-11',
-        priority: 'high',
-        status: 'pending',
-        aiValidationScore: 85.2,
-        swarmConsensusScore: 87.9,
-        documents: ['Dispute Petition', 'Evidence Bundle', 'Legal Opinion'],
-        selected: false,
-        juliaosAgentValidation: true,
-        swarmConsensusReached: false
-      }
-    ]
+export const BatchApprovalQueue: React.FC = () => {
+  const { hasPermission, currentUser } = useRBAC();
+  const [properties, setProperties] = useState<Property[]>(MOCK_PROPERTIES);
+  const [selectedProperties, setSelectedProperties] = useState<Set<string>>(new Set());
+  const [batchOperations, setBatchOperations] = useState<BatchOperation[]>([]);
+  const [filters, setFilters] = useState({
+    status: 'all',
+    priority: 'all',
+    district: 'all',
+    search: ''
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showBulkActions, setShowBulkActions] = useState(false);
 
-    setApprovalItems(mockItems)
+  // Check permissions
+  const canApprove = hasPermission(Permission.APPROVE_PROPERTIES);
+  const canReject = hasPermission(Permission.REJECT_PROPERTIES);
+  const canView = hasPermission(Permission.VIEW_PROPERTIES);
+
+  if (!canView) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">You don't have permission to view properties.</p>
+      </div>
+    );
   }
 
-  const handleSelectItem = (itemId: string) => {
-    setApprovalItems(prev => prev.map(item => 
-      item.id === itemId ? { ...item, selected: !item.selected } : item
-    ))
-    
-    setSelectedItems(prev => 
-      prev.includes(itemId) 
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
-    )
-  }
+  // Filter properties based on current filters
+  const filteredProperties = properties.filter(property => {
+    if (filters.status !== 'all' && property.status !== filters.status) return false;
+    if (filters.priority !== 'all' && property.priority !== filters.priority) return false;
+    if (filters.district !== 'all' && property.district !== filters.district) return false;
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      return (
+        property.ulpinId.toLowerCase().includes(searchLower) ||
+        property.ownerName.toLowerCase().includes(searchLower) ||
+        property.surveyNumber.toLowerCase().includes(searchLower) ||
+        property.village.toLowerCase().includes(searchLower)
+      );
+    }
+    return true;
+  });
 
-  const handleSelectAll = () => {
-    const allIds = approvalItems.map(item => item.id)
-    if (selectedItems.length === allIds.length) {
-      setSelectedItems([])
-      setApprovalItems(prev => prev.map(item => ({ ...item, selected: false })))
+  // Handle property selection
+  const handlePropertySelect = (propertyId: string) => {
+    const newSelected = new Set(selectedProperties);
+    if (newSelected.has(propertyId)) {
+      newSelected.delete(propertyId);
     } else {
-      setSelectedItems(allIds)
-      setApprovalItems(prev => prev.map(item => ({ ...item, selected: true })))
+      newSelected.add(propertyId);
     }
-  }
+    setSelectedProperties(newSelected);
+    setShowBulkActions(newSelected.size > 0);
+  };
 
-  const handleBatchAction = async (action: 'approve' | 'reject' | 'review') => {
-    if (selectedItems.length === 0) {
-      alert('Please select items to process')
-      return
+  // Handle select all
+  const handleSelectAll = () => {
+    if (selectedProperties.size === filteredProperties.length) {
+      setSelectedProperties(new Set());
+      setShowBulkActions(false);
+    } else {
+      setSelectedProperties(new Set(filteredProperties.map(p => p.id)));
+      setShowBulkActions(true);
+    }
+  };
+
+  // Process batch operation
+  const processBatchOperation = async (type: 'approve' | 'reject' | 'escalate') => {
+    if (!currentUser || selectedProperties.size === 0) return;
+
+    const operationId = Date.now().toString();
+    const newOperation: BatchOperation = {
+      id: operationId,
+      type,
+      properties: Array.from(selectedProperties),
+      status: 'pending',
+      progress: 0,
+      createdBy: currentUser.name,
+      createdAt: new Date()
+    };
+
+    setBatchOperations(prev => [...prev, newOperation]);
+    setIsProcessing(true);
+
+    // Simulate batch processing
+    const totalProperties = selectedProperties.size;
+    let processed = 0;
+
+    for (const propertyId of selectedProperties) {
+      try {
+        // TODO: Replace with real API call
+        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+        
+        // Update property status
+        setProperties(prev => prev.map(property => 
+          property.id === propertyId 
+            ? { ...property, status: type === 'approve' ? 'approved' : 'rejected' }
+            : property
+        ));
+
+        processed++;
+        const progress = Math.round((processed / totalProperties) * 100);
+        
+        setBatchOperations(prev => prev.map(op => 
+          op.id === operationId 
+            ? { ...op, progress }
+            : op
+        ));
+
+      } catch (error) {
+        console.error(`Error processing property ${propertyId}:`, error);
+      }
     }
 
-    setIsProcessing(true)
+    // Mark operation as completed
+    setBatchOperations(prev => prev.map(op => 
+      op.id === operationId 
+        ? { ...op, status: 'completed', progress: 100, completedAt: new Date() }
+        : op
+    ));
 
-    try {
-      // Simulate batch processing with JuliaOS integration
-      console.log(`Processing ${action} for items:`, selectedItems)
-      
-      // Simulate JuliaOS agent processing time
-      await new Promise(resolve => setTimeout(resolve, 3000))
-      
-      // Update status for selected items
-      setApprovalItems(prev => prev.map(item => 
-        selectedItems.includes(item.id) 
-          ? { 
-              ...item, 
-              status: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'under_review',
-              onchainTransaction: action === 'approve' ? `0x${Math.random().toString(16).substring(2, 18)}...` : undefined
-            }
-          : item
-      ))
-      
-      setSelectedItems([])
-      
-      // Show success message
-      alert(`Successfully processed ${selectedItems.length} items with JuliaOS integration`)
-      
-    } catch (error) {
-      console.error('Error processing batch action:', error)
-      alert('Error processing batch action')
-    } finally {
-      setIsProcessing(false)
-    }
-  }
+    setIsProcessing(false);
+    setSelectedProperties(new Set());
+    setShowBulkActions(false);
+  };
 
+  // Get priority color
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800'
-      case 'medium': return 'bg-yellow-100 text-yellow-800'
-      case 'low': return 'bg-green-100 text-green-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'urgent': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
+  // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'approved': return 'bg-green-100 text-green-800'
-      case 'rejected': return 'bg-red-100 text-red-800'
-      case 'under_review': return 'bg-blue-100 text-blue-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'under_review': return 'bg-blue-100 text-blue-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-  }
-
-  const getApplicationTypeIcon = (type: string) => {
-    switch (type) {
-      case 'registration': return '📝'
-      case 'transfer': return '🔄'
-      case 'modification': return '✏️'
-      case 'dispute_resolution': return '⚖️'
-      default: return '📄'
-    }
-  }
-
-  const filteredItems = approvalItems.filter(item => {
-    if (filter === 'all') return true
-    return item.status === filter
-  })
-
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    switch (sortBy) {
-      case 'submittedDate':
-        return new Date(b.submittedDate).getTime() - new Date(a.submittedDate).getTime()
-      case 'priority':
-        const priorityOrder = { high: 3, medium: 2, low: 1 }
-        return priorityOrder[b.priority] - priorityOrder[a.priority]
-      case 'aiValidationScore':
-        return b.aiValidationScore - a.aiValidationScore
-      case 'swarmConsensusScore':
-        return b.swarmConsensusScore - a.swarmConsensusScore
-      default:
-        return 0
-    }
-  })
+  };
 
   return (
     <div className="space-y-6">
-      {/* Batch Actions Header */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="card-title">Batch Approval Queue</h3>
-            <p className="card-subtitle">
-              {selectedItems.length} of {approvalItems.length} items selected
-            </p>
-          </div>
-          
-          <div className="flex space-x-3">
-            <button
-              onClick={() => handleBatchAction('approve')}
-              disabled={selectedItems.length === 0 || isProcessing}
-              className="btn-success disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? 'Processing...' : `Approve (${selectedItems.length})`}
-            </button>
-            <button
-              onClick={() => handleBatchAction('reject')}
-              disabled={selectedItems.length === 0 || isProcessing}
-              className="btn-danger disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? 'Processing...' : `Reject (${selectedItems.length})`}
-            </button>
-            <button
-              onClick={() => handleBatchAction('review')}
-              disabled={selectedItems.length === 0 || isProcessing}
-              className="btn-warning disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? 'Processing...' : `Mark for Review (${selectedItems.length})`}
-            </button>
-          </div>
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Batch Approval Queue</h2>
+          <p className="text-gray-600">
+            {filteredProperties.length} properties pending review
+          </p>
         </div>
+        <div className="flex space-x-3">
+          {showBulkActions && (
+            <>
+              {canApprove && (
+                <button
+                  onClick={() => processBatchOperation('approve')}
+                  disabled={isProcessing}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
+                >
+                  Approve Selected ({selectedProperties.size})
+                </button>
+              )}
+              {canReject && (
+                <button
+                  onClick={() => processBatchOperation('reject')}
+                  disabled={isProcessing}
+                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50"
+                >
+                  Reject Selected ({selectedProperties.size})
+                </button>
+              )}
+              <button
+                onClick={() => processBatchOperation('escalate')}
+                disabled={isProcessing}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                Escalate Selected ({selectedProperties.size})
+              </button>
+            </>
+          )}
+        </div>
+      </div>
 
-        {/* Filters and Sorting */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Filter:</label>
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-lg shadow">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
-              <option value="all">All Items</option>
+              <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="under_review">Under Review</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
             </select>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Sort by:</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
             <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+              value={filters.priority}
+              onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
-              <option value="submittedDate">Submission Date</option>
-              <option value="priority">Priority</option>
-              <option value="aiValidationScore">AI Validation Score</option>
-              <option value="swarmConsensusScore">Swarm Consensus Score</option>
+              <option value="all">All Priorities</option>
+              <option value="urgent">Urgent</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
             </select>
           </div>
-
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Show JuliaOS Validation:</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
+            <select
+              value={filters.district}
+              onChange={(e) => setFilters({ ...filters, district: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option value="all">All Districts</option>
+              <option value="Ahmedabad">Ahmedabad</option>
+              <option value="Vadodara">Vadodara</option>
+              <option value="Surat">Surat</option>
+              <option value="Rajkot">Rajkot</option>
+              <option value="Bhavnagar">Bhavnagar</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
             <input
-              type="checkbox"
-              checked={showJuliaOSValidation}
-              onChange={(e) => setShowJuliaOSValidation(e.target.checked)}
-              className="rounded border-gray-300"
+              type="text"
+              placeholder="ULPIN, Owner, Survey No..."
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
             />
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={() => setFilters({ status: 'all', priority: 'all', district: 'all', search: '' })}
+              className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+            >
+              Clear Filters
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Approval Items Table */}
-      <div className="card">
+      {/* Batch Operations Progress */}
+      {batchOperations.length > 0 && (
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-medium mb-4">Batch Operations</h3>
+          <div className="space-y-3">
+            {batchOperations.map(operation => (
+              <div key={operation.id} className="border rounded-lg p-3">
+                <div className="flex justify-between items-center mb-2">
+                  <div>
+                    <span className="font-medium">
+                      {operation.type.charAt(0).toUpperCase() + operation.type.slice(1)} 
+                      ({operation.properties.length} properties)
+                    </span>
+                    <span className="text-sm text-gray-500 ml-2">
+                      by {operation.createdBy}
+                    </span>
+                  </div>
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    operation.status === 'completed' ? 'bg-green-100 text-green-800' :
+                    operation.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                    operation.status === 'failed' ? 'bg-red-100 text-red-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {operation.status}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${operation.progress}%` }}
+                  ></div>
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {operation.progress}% complete
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Properties Table */}
+      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <div className="px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              checked={selectedProperties.size === filteredProperties.length && filteredProperties.length > 0}
+              onChange={handleSelectAll}
+              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+            />
+            <span className="ml-2 text-sm text-gray-700">
+              Select All ({filteredProperties.length})
+            </span>
+          </div>
+        </div>
+        
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.length === approvalItems.length}
-                    onChange={handleSelectAll}
-                    className="rounded border-gray-300"
-                  />
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Select
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Application
+                  ULPIN ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Applicant
+                  Owner
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
+                  Location
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Area (sq m)
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Priority
@@ -343,19 +448,6 @@ export default function BatchApprovalQueue() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                {showJuliaOSValidation && (
-                  <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      AI Score
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Swarm Score
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      JuliaOS Status
-                    </th>
-                  </>
-                )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Submitted
                 </th>
@@ -365,88 +457,53 @@ export default function BatchApprovalQueue() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {sortedItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
+              {filteredProperties.map((property) => (
+                <tr key={property.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input
                       type="checkbox"
-                      checked={item.selected}
-                      onChange={() => handleSelectItem(item.id)}
-                      className="rounded border-gray-300"
+                      checked={selectedProperties.has(property.id)}
+                      onChange={() => handlePropertySelect(property.id)}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                     />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{item.propertyTitle}</div>
-                      <div className="text-sm text-gray-500">{item.ulpin}</div>
-                    </div>
+                    <div className="text-sm font-medium text-gray-900">{property.ulpinId}</div>
+                    <div className="text-sm text-gray-500">Survey: {property.surveyNumber}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{property.ownerName}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{property.village}</div>
+                    <div className="text-sm text-gray-500">{property.taluka}, {property.district}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.applicant}
+                    {property.area.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <span className="mr-2">{getApplicationTypeIcon(item.applicationType)}</span>
-                      <span className="text-sm text-gray-900 capitalize">
-                        {item.applicationType.replace('_', ' ')}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(item.priority)}`}>
-                      {item.priority}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(property.priority)}`}>
+                      {property.priority}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(item.status)}`}>
-                      {item.status.replace('_', ' ')}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(property.status)}`}>
+                      {property.status.replace('_', ' ')}
                     </span>
                   </td>
-                  {showJuliaOSValidation && (
-                    <>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex items-center">
-                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
-                              style={{ width: `${item.aiValidationScore}%` }}
-                            ></div>
-                          </div>
-                          <span>{item.aiValidationScore}%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex items-center">
-                          <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                            <div 
-                              className="bg-green-600 h-2 rounded-full" 
-                              style={{ width: `${item.swarmConsensusScore}%` }}
-                            ></div>
-                          </div>
-                          <span>{item.swarmConsensusScore}%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col space-y-1">
-                          <div className="flex items-center space-x-1">
-                            <div className={`w-2 h-2 rounded-full ${item.juliaosAgentValidation ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                            <span className="text-xs text-gray-600">Agent</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <div className={`w-2 h-2 rounded-full ${item.swarmConsensusReached ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                            <span className="text-xs text-gray-600">Swarm</span>
-                          </div>
-                        </div>
-                      </td>
-                    </>
-                  )}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(item.submittedDate).toLocaleDateString()}
+                    {property.submittedDate.toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">View</button>
-                    <button className="text-green-600 hover:text-green-900 mr-3">Approve</button>
-                    <button className="text-red-600 hover:text-red-900">Reject</button>
+                    <div className="flex space-x-2">
+                      <button className="text-indigo-600 hover:text-indigo-900">View</button>
+                      {canApprove && property.status === 'pending' && (
+                        <button className="text-green-600 hover:text-green-900">Approve</button>
+                      )}
+                      {canReject && property.status === 'pending' && (
+                        <button className="text-red-600 hover:text-red-900">Reject</button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -455,42 +512,14 @@ export default function BatchApprovalQueue() {
         </div>
       </div>
 
-      {/* Documents Preview */}
-      {selectedItems.length > 0 && (
-        <div className="card">
-          <h4 className="card-title mb-4">
-            Documents for Selected Items ({selectedItems.length})
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {selectedItems.map(itemId => {
-              const item = approvalItems.find(i => i.id === itemId)
-              if (!item) return null
-              
-              return (
-                <div key={itemId} className="border border-gray-200 rounded-lg p-4">
-                  <h5 className="font-medium text-gray-900 mb-2">{item.propertyTitle}</h5>
-                  <div className="space-y-1">
-                    {item.documents.map((doc, index) => (
-                      <div key={index} className="flex items-center text-sm text-gray-600">
-                        <span className="mr-2">📄</span>
-                        {doc}
-                      </div>
-                    ))}
-                  </div>
-                  {item.onchainTransaction && (
-                    <div className="mt-2 pt-2 border-t border-gray-200">
-                      <div className="text-xs text-gray-500">Onchain TX:</div>
-                      <div className="text-xs font-mono text-gray-700 truncate">
-                        {item.onchainTransaction}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+      {/* Empty state */}
+      {filteredProperties.length === 0 && (
+        <div className="text-center py-12">
+          <div className="text-gray-400 text-6xl mb-4">📋</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No properties found</h3>
+          <p className="text-gray-500">Try adjusting your filters or search criteria.</p>
         </div>
       )}
     </div>
-  )
-} 
+  );
+}; 
