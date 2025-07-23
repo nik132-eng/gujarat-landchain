@@ -1,0 +1,45 @@
+FROM ubuntu:22.04
+
+# 1. Set up environment
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/root/.local/share/solana/install/active_release/bin:$PATH"
+ENV PATH="/root/.cargo/bin:$PATH"
+
+# 2. Install base dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    curl \
+    wget \
+    git \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Install Node.js and Yarn
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+RUN apt-get install -y nodejs
+RUN npm install -g yarn
+
+# 4. Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+# 5. Install Solana CLI
+RUN sh -c "$(curl -sSfL https://release.solana.com/v1.18.18/install)"
+
+# 6. Install Anchor
+RUN cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked
+
+# 7. Copy project files
+WORKDIR /app
+COPY . .
+
+# 8. Install project dependencies
+RUN yarn install
+
+# 9. Set up entrypoint
+ENTRYPOINT [ "bash" ]
+
