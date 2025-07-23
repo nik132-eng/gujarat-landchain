@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Gujarat LandChain Design System */
+:root {
+  --gujarat-blue-50: #eff6ff;
+  --gujarat-blue-100: #dbeafe;
+  --gujarat-blue-200: #bfdbfe;
+  --gujarat-blue-300: #93c5fd;
+  --gujarat-blue-400: #60a5fa;
+  --gujarat-blue-500: #3b82f6;
+  --gujarat-blue-600: #2563eb;
+  --gujarat-blue-700: #1d4ed8;
+  --gujarat-blue-800: #1e40af;
+  --gujarat-blue-900: #1e3a8a;
+  
+  --gujarat-saffron-50: #fffbeb;
+  --gujarat-saffron-100: #fef3c7;
+  --gujarat-saffron-200: #fde68a;
+  --gujarat-saffron-300: #fcd34d;
+  --gujarat-saffron-400: #fbbf24;
+  --gujarat-saffron-500: #f59e0b;
+  --gujarat-saffron-600: #d97706;
+  --gujarat-saffron-700: #b45309;
+  --gujarat-saffron-800: #92400e;
+  --gujarat-saffron-900: #78350f;
+  
+  --gujarat-green-50: #f0fdf4;
+  --gujarat-green-100: #dcfce7;
+  --gujarat-green-200: #bbf7d0;
+  --gujarat-green-300: #86efac;
+  --gujarat-green-400: #4ade80;
+  --gujarat-green-500: #22c55e;
+  --gujarat-green-600: #16a34a;
+  --gujarat-green-700: #15803d;
+  --gujarat-green-800: #166534;
+  --gujarat-green-900: #14532d;
+}
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-gray-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gujarat-blue-600 hover:bg-gujarat-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gujarat-blue-500 focus:ring-offset-2;
+  }
+  
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg border border-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+  }
+  
+  .btn-success {
+    @apply bg-gujarat-green-600 hover:bg-gujarat-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gujarat-green-500 focus:ring-offset-2;
+  }
+  
+  .btn-warning {
+    @apply bg-gujarat-saffron-600 hover:bg-gujarat-saffron-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gujarat-saffron-500 focus:ring-offset-2;
+  }
+  
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+  }
+  
+  .card-header {
+    @apply border-b border-gray-200 pb-4 mb-4;
+  }
+  
+  .card-title {
+    @apply text-lg font-semibold text-gray-900;
+  }
+  
+  .card-subtitle {
+    @apply text-sm text-gray-600 mt-1;
+  }
+  
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .status-success {
+    @apply bg-gujarat-green-100 text-gujarat-green-800;
+  }
+  
+  .status-warning {
+    @apply bg-gujarat-saffron-100 text-gujarat-saffron-800;
+  }
+  
+  .status-error {
+    @apply bg-red-100 text-red-800;
+  }
+  
+  .status-info {
+    @apply bg-gujarat-blue-100 text-gujarat-blue-800;
+  }
+  
+  .juliaos-agent-card {
+    @apply bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4;
+  }
+  
+  .swarm-consensus-card {
+    @apply bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4;
+  }
+  
+  .onchain-activity-card {
+    @apply bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-lg p-4;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+} 
