@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import Navigation from '@/components/Navigation'
 import SolanaWalletProvider from '@/components/SolanaWalletProvider'
+import PWAStatus from '@/components/PWAStatus'
 
 export const metadata: Metadata = {
   title: 'Gujarat LandChain - Citizen Portal',
@@ -42,6 +43,7 @@ export default function RootLayout({
         <SolanaWalletProvider>
           <Navigation />
           {children}
+          <PWAStatus />
         </SolanaWalletProvider>
       </body>
     </html>
