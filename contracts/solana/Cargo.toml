@@ -1,6 +1,7 @@
 [workspace]
 members = [
-    "programs/treasury"
+    "programs/treasury",
+    "programs/bridge"
 ]
 
 [profile.release]

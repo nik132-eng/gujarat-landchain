@@ -4,12 +4,15 @@ skip-lint = false
 
 [programs.localnet]
 ulpin_treasury = "ULPinTreasury111111111111111111111111111111"
+ulpin_bridge = "ULPinBridge111111111111111111111111111111"
 
 [programs.devnet]
 ulpin_treasury = "ULPinTreasury111111111111111111111111111111"
+ulpin_bridge = "ULPinBridge111111111111111111111111111111"
 
 [programs.mainnet]
 ulpin_treasury = "ULPinTreasury111111111111111111111111111111"
+ulpin_bridge = "ULPinBridge111111111111111111111111111111"
 
 [registry]
 url = "https://api.apr.dev"
