@@ -2,6 +2,16 @@
 # Sprint 5: Cross-Chain Treasury Bridge Development
 # Gujarat LandChain × JuliaOS Project
 
+# TODO: FUTURE ENHANCEMENTS - Atomic Swap Improvements:
+# 1. ✅ ENHANCED: Slippage protection with multi-level validation and dynamic adjustments
+# 2. ✅ ENHANCED: Fee collection system with volume-based discounts and allocation
+# 3. ✅ ENHANCED: Comprehensive swap validation and error handling
+# 4. 🔄 NEEDS WORK: Real blockchain integration for swap execution
+# 5. 🔄 NEEDS WORK: Advanced market data integration for dynamic pricing
+# 6. 🔄 NEEDS WORK: Liquidity pool management and rebalancing
+# 7. 🔄 NEEDS WORK: Cross-chain transaction monitoring and recovery
+# 8. 🔄 NEEDS WORK: Advanced analytics and performance optimization
+
 """
 Atomic Swap Integration Testing
 Tests the complete atomic swap flow between Polygon and Solana
@@ -112,21 +122,110 @@ function test_swap_initiation(config::AtomicSwapTestConfig)
         rate_variation = (rand() - 0.5) * 0.02  # ±1% variation
         exchange_rate = base_rate + rate_variation
         
-        # Calculate expected amounts
-        swap_fee = config.test_usdc_amount * 0.001  # 0.1% fee
-        net_amount = config.test_usdc_amount - swap_fee
+        # Enhanced fee collection system with multiple fee types
+        fee_collection = Dict{String, Any}()
+        
+        # Base swap fee (0.1%)
+        base_swap_fee = config.test_usdc_amount * 0.001
+        
+        # Dynamic fee based on volume
+        volume_tier = if config.test_usdc_amount >= 10000
+            "high_volume"
+        elseif config.test_usdc_amount >= 1000
+            "medium_volume"
+        else
+            "low_volume"
+        end
+        
+        volume_discount = Dict(
+            "high_volume" => 0.5,    # 50% discount for high volume
+            "medium_volume" => 0.8,  # 20% discount for medium volume
+            "low_volume" => 1.0      # No discount for low volume
+        )
+        
+        # Priority fee for urgent swaps
+        priority_fee_multiplier = 1.0
+        if haskey(swap_params, "urgent") && swap_params["urgent"]
+            priority_fee_multiplier = 1.5  # 50% premium for urgent swaps
+        end
+        
+        # Market volatility fee
+        volatility_fee = base_swap_fee * market_volatility * 10  # Scale volatility impact
+        
+        # Calculate total fee
+        total_swap_fee = base_swap_fee * volume_discount[volume_tier] * priority_fee_multiplier + volatility_fee
+        
+        # Fee breakdown
+        fee_collection["base_fee"] = base_swap_fee
+        fee_collection["volume_discount"] = volume_discount[volume_tier]
+        fee_collection["priority_multiplier"] = priority_fee_multiplier
+        fee_collection["volatility_fee"] = volatility_fee
+        fee_collection["total_fee"] = total_swap_fee
+        fee_collection["volume_tier"] = volume_tier
+        fee_collection["fee_percentage"] = (total_swap_fee / config.test_usdc_amount) * 100
+        
+        # Fee allocation (where fees go)
+        fee_collection["allocation"] = Dict(
+            "treasury" => total_swap_fee * 0.6,      # 60% to treasury
+            "validators" => total_swap_fee * 0.25,   # 25% to validators
+            "liquidity_providers" => total_swap_fee * 0.1,  # 10% to LPs
+            "burn" => total_swap_fee * 0.05          # 5% burned
+        )
+        
+        # Calculate net amount after fees
+        net_amount = config.test_usdc_amount - total_swap_fee
         expected_solana_amount = net_amount * exchange_rate
         
-        # Simulate slippage calculation
+        # Enhanced slippage calculation with multiple protection levels
+        slippage_protection = Dict{String, Any}()
+        
+        # Level 1: Basic slippage calculation
         slippage_amount = config.test_usdc_amount - (config.test_usdc_amount * 0.97)
         slippage_bps = Int(round((slippage_amount / config.test_usdc_amount) * 10000))
         
-        # Validate slippage is within tolerance
-        if slippage_bps > config.max_slippage_bps
+        # Level 2: Dynamic slippage based on market conditions
+        market_volatility = rand() * 0.05  # 0-5% market volatility
+        dynamic_slippage_bps = slippage_bps + Int(round(market_volatility * 10000))
+        
+        # Level 3: Time-based slippage adjustment
+        time_factor = min(1.0, (time() - test_start) / 300.0)  # Increase over 5 minutes
+        time_adjusted_slippage = dynamic_slippage_bps * (1.0 + time_factor * 0.5)
+        
+        slippage_protection["basic_slippage_bps"] = slippage_bps
+        slippage_protection["dynamic_slippage_bps"] = dynamic_slippage_bps
+        slippage_protection["time_adjusted_slippage_bps"] = Int(round(time_adjusted_slippage))
+        slippage_protection["market_volatility"] = market_volatility
+        slippage_protection["time_factor"] = time_factor
+        
+        # Enhanced slippage validation with multiple checks
+        slippage_checks = Dict{String, Bool}()
+        
+        # Check 1: Basic slippage tolerance
+        slippage_checks["basic_tolerance"] = slippage_bps <= config.max_slippage_bps
+        
+        # Check 2: Dynamic slippage tolerance (more permissive)
+        dynamic_max_slippage = config.max_slippage_bps + Int(round(market_volatility * 10000))
+        slippage_checks["dynamic_tolerance"] = dynamic_slippage_bps <= dynamic_max_slippage
+        
+        # Check 3: Time-adjusted tolerance (most permissive for urgent swaps)
+        time_max_slippage = config.max_slippage_bps * 2  # Double tolerance for time-sensitive swaps
+        slippage_checks["time_tolerance"] = Int(round(time_adjusted_slippage)) <= time_max_slippage
+        
+        # Check 4: Emergency halt for extreme slippage
+        emergency_threshold = config.max_slippage_bps * 5  # 5x normal tolerance
+        slippage_checks["emergency_halt"] = slippage_bps <= emergency_threshold
+        
+        slippage_protection["validation_checks"] = slippage_checks
+        slippage_protection["all_checks_passed"] = all(values(slippage_checks))
+        
+        # Enhanced slippage validation
+        if !slippage_protection["all_checks_passed"]
+            failed_checks = [check for (check, passed) in slippage_checks if !passed]
             return Dict(
                 "success" => false,
-                "error" => "Slippage exceeds maximum tolerance: $(slippage_bps) > $(config.max_slippage_bps)",
+                "error" => "Slippage protection failed: $(join(failed_checks, ", "))",
                 "swap_id" => swap_id,
+                "slippage_protection" => slippage_protection,
                 "processing_time" => time() - test_start
             )
         end
@@ -141,8 +240,10 @@ function test_swap_initiation(config::AtomicSwapTestConfig)
         println("   📄 Polygon TX: $polygon_tx_hash")
         println("   💱 Exchange Rate: $(round(exchange_rate, digits=6))")
         println("   💰 Expected Solana Amount: $(round(expected_solana_amount, digits=2)) USDC")
-        println("   💸 Swap Fee: $(round(swap_fee, digits=2)) USDC")
-        println("   📊 Slippage: $(round(slippage_bps/100, digits=2))%")
+        println("   💸 Total Swap Fee: $(round(fee_collection["total_fee"], digits=2)) USDC ($(round(fee_collection["fee_percentage"], digits=3))%)")
+        println("   📊 Slippage: $(round(slippage_bps/100, digits=2))% (Dynamic: $(round(dynamic_slippage_bps/100, digits=2))%)")
+        println("   🏷️  Volume Tier: $(fee_collection["volume_tier"]) (Discount: $(round((1-volume_discount[volume_tier])*100, digits=1))%)")
+        println("   🛡️  Slippage Protection: $(slippage_protection["all_checks_passed"] ? "✅ ACTIVE" : "❌ FAILED")")
         
         return Dict(
             "success" => true,
@@ -150,8 +251,10 @@ function test_swap_initiation(config::AtomicSwapTestConfig)
             "polygon_tx_hash" => polygon_tx_hash,
             "exchange_rate" => exchange_rate,
             "expected_solana_amount" => expected_solana_amount,
-            "swap_fee" => swap_fee,
+            "swap_fee" => fee_collection["total_fee"],
             "slippage_bps" => slippage_bps,
+            "slippage_protection" => slippage_protection,
+            "fee_collection" => fee_collection,
             "processing_time" => time() - test_start
         )
         

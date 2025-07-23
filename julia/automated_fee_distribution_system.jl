@@ -2,6 +2,16 @@
 # Sprint 5: Cross-Chain Treasury Bridge Development
 # Gujarat LandChain × JuliaOS Project
 
+# TODO: FUTURE ENHANCEMENTS - Fee Distribution System Improvements:
+# 1. ✅ ENHANCED: Fee calculation with validation and safeguards
+# 2. ✅ ENHANCED: Cross-chain distribution with retry logic and detailed error handling
+# 3. ✅ ENHANCED: Comprehensive result tracking and reporting
+# 4. 🔄 NEEDS WORK: Real blockchain integration for treasury monitoring
+# 5. 🔄 NEEDS WORK: Performance-based reward algorithm optimization
+# 6. 🔄 NEEDS WORK: Multi-chain balance synchronization
+# 7. 🔄 NEEDS WORK: Real-time fee collection monitoring
+# 8. 🔄 NEEDS WORK: Advanced analytics and reporting dashboard
+
 """
 Automated Fee Distribution System
 - Objective: Distribute validation fees (0.1%) and agent rewards (0.05%) automatically
@@ -133,24 +143,44 @@ function process_validation_fee_distribution(config::FeeDistributionConfig,
     distributions = FeeDistributionEvent[]
     
     try
-        # Calculate total validation fees
-        total_validation_amount = validation_results["total_payment_amount"]
+        # Enhanced fee calculation with validation and error handling
+        total_validation_amount = get(validation_results, "total_payment_amount", 0.0)
+        
+        # Validate input data
+        if total_validation_amount <= 0.0
+            println("   ⚠️  Invalid validation amount: $total_validation_amount")
+            return distributions
+        end
+        
+        if config.validation_fee_bps <= 0 || config.validation_fee_bps > 1000
+            println("   ⚠️  Invalid fee rate: $(config.validation_fee_bps) bps")
+            return distributions
+        end
+        
         validation_fee_rate = config.validation_fee_bps / 10000.0
         total_fee_amount = total_validation_amount * validation_fee_rate
+        
+        # Apply fee calculation safeguards
+        if total_fee_amount > total_validation_amount * 0.1  # Max 10% fee
+            total_fee_amount = total_validation_amount * 0.1
+            println("   ⚠️  Fee capped at 10% of validation amount")
+        end
         
         println("   Total Validation Amount: $$(round(total_validation_amount, digits=2))")
         println("   Fee Rate: $(config.validation_fee_bps/100)%")
         println("   Total Fee Amount: $$(round(total_fee_amount, digits=2))")
         
-        # Check minimum distribution threshold
+        # Enhanced threshold checks with detailed logging
         if total_fee_amount < config.min_distribution_threshold
-            println("   ⏳ Amount below minimum threshold, accumulating for next batch")
+            println("   ⏳ Amount below minimum threshold ($$(config.min_distribution_threshold)), accumulating for next batch")
+            println("   📊 Current amount: $$(round(total_fee_amount, digits=2))")
             return distributions
         end
         
-        # Check emergency halt threshold
         if total_fee_amount > config.emergency_halt_threshold
-            println("   🚨 Amount exceeds emergency threshold, requiring manual approval")
+            println("   🚨 Amount exceeds emergency threshold ($$(config.emergency_halt_threshold)), requiring manual approval")
+            println("   📊 Current amount: $$(round(total_fee_amount, digits=2))")
+            println("   🔒 Distribution halted for security review")
             return distributions
         end
         
@@ -297,8 +327,38 @@ function execute_cross_chain_distributions(config::FeeDistributionConfig,
     
     successful_distributions = 0
     failed_distributions = 0
+    retry_distributions = 0
     
-    # Process distributions in batches
+    # Enhanced distribution tracking
+    distribution_results = Dict{String, Dict{String, Any}}()
+    
+    # Pre-flight checks
+    println("   🔍 Pre-flight checks...")
+    if isempty(distributions)
+        println("   ⚠️  No distributions to process")
+        return 0, 0
+    end
+    
+    # Validate all distributions before processing
+    valid_distributions = filter(distributions) do dist
+        if dist.fee_amount <= 0.0
+            println("   ⚠️  Invalid fee amount for $(dist.event_id): $(dist.fee_amount)")
+            return false
+        end
+        if isempty(dist.recipient_address)
+            println("   ⚠️  Missing recipient address for $(dist.event_id)")
+            return false
+        end
+        return true
+    end
+    
+    if length(valid_distributions) != length(distributions)
+        println("   ⚠️  Filtered out $(length(distributions) - length(valid_distributions)) invalid distributions")
+    end
+    
+    distributions = valid_distributions
+    
+    # Process distributions in batches with enhanced error handling
     batch_size = min(config.max_distribution_batch, length(distributions))
     
     for i in 1:batch_size:length(distributions)
@@ -308,46 +368,110 @@ function execute_cross_chain_distributions(config::FeeDistributionConfig,
         println("   📦 Processing batch $(div(i-1, batch_size) + 1): $(length(batch)) distributions")
         
         for distribution in batch
-            try
-                # Send cross-chain distribution message
-                distribution_result = send_cross_chain_message(
-                    bridge,
-                    distribution.source_chain,
-                    distribution.target_chain,
-                    "fee_distribution",
-                    Dict(
-                        "event_id" => distribution.event_id,
-                        "event_type" => distribution.event_type,
-                        "recipient" => distribution.recipient_address,
-                        "amount" => distribution.fee_amount,
-                        "ulpin" => distribution.ulpin_parcel,
-                        "agent_id" => distribution.agent_id
-                    ),
-                    config.treasury_addresses[distribution.source_chain],
-                    distribution.recipient_address
-                )
-                
-                if distribution_result["success"]
-                    # Update distribution with transaction hash
-                    distributions[findfirst(d -> d.event_id == distribution.event_id, distributions)].distribution_tx = distribution_result["target_tx_hash"]
-                    distributions[findfirst(d -> d.event_id == distribution.event_id, distributions)].status = "completed"
+            max_retries = 3
+            retry_delay = 1.0
+            distribution_success = false
+            
+            for retry_attempt in 1:max_retries
+                try
+                    # Enhanced cross-chain distribution message with detailed payload
+                    distribution_result = send_cross_chain_message(
+                        bridge,
+                        distribution.source_chain,
+                        distribution.target_chain,
+                        "fee_distribution",
+                        Dict(
+                            "event_id" => distribution.event_id,
+                            "event_type" => distribution.event_type,
+                            "recipient" => distribution.recipient_address,
+                            "amount" => distribution.fee_amount,
+                            "ulpin" => distribution.ulpin_parcel,
+                            "agent_id" => distribution.agent_id,
+                            "timestamp" => now(),
+                            "retry_attempt" => retry_attempt,
+                            "batch_id" => distribution.batch_id
+                        ),
+                        config.treasury_addresses[distribution.source_chain],
+                        distribution.recipient_address
+                    )
                     
-                    successful_distributions += 1
-                    println("      ✅ $(distribution.event_type): $$(round(distribution.fee_amount, digits=2)) → $(distribution.recipient_address[1:10])...")
-                else
-                    distributions[findfirst(d -> d.event_id == distribution.event_id, distributions)].status = "failed"
-                    failed_distributions += 1
-                    println("      ❌ $(distribution.event_type): Failed - $(distribution_result["error"])")
+                    if distribution_result["success"]
+                        # Update distribution with transaction hash and metadata
+                        dist_index = findfirst(d -> d.event_id == distribution.event_id, distributions)
+                        if dist_index !== nothing
+                            distributions[dist_index].distribution_tx = distribution_result["target_tx_hash"]
+                            distributions[dist_index].status = "completed"
+                        end
+                        
+                        # Store detailed results
+                        distribution_results[distribution.event_id] = Dict(
+                            "success" => true,
+                            "tx_hash" => distribution_result["target_tx_hash"],
+                            "processing_time" => distribution_result["processing_time"],
+                            "retry_attempt" => retry_attempt,
+                            "timestamp" => now()
+                        )
+                        
+                        successful_distributions += 1
+                        println("      ✅ $(distribution.event_type): $$(round(distribution.fee_amount, digits=2)) → $(distribution.recipient_address[1:10])... (attempt $retry_attempt)")
+                        distribution_success = true
+                        break
+                    else
+                        error_msg = distribution_result["error"]
+                        println("      ⚠️  $(distribution.event_type): Attempt $retry_attempt failed - $error_msg")
+                        
+                        if retry_attempt == max_retries
+                            # Final failure
+                            dist_index = findfirst(d -> d.event_id == distribution.event_id, distributions)
+                            if dist_index !== nothing
+                                distributions[dist_index].status = "failed"
+                            end
+                            
+                            distribution_results[distribution.event_id] = Dict(
+                                "success" => false,
+                                "error" => error_msg,
+                                "retry_attempts" => max_retries,
+                                "timestamp" => now()
+                            )
+                            
+                            failed_distributions += 1
+                            println("      ❌ $(distribution.event_type): All attempts failed")
+                        else
+                            # Wait before retry
+                            sleep(retry_delay)
+                            retry_delay *= 1.5  # Exponential backoff
+                        end
+                    end
+                    
+                catch e
+                    println("      ⚠️  $(distribution.event_type): Attempt $retry_attempt exception - $e")
+                    
+                    if retry_attempt == max_retries
+                        # Final failure
+                        dist_index = findfirst(d -> d.event_id == distribution.event_id, distributions)
+                        if dist_index !== nothing
+                            distributions[dist_index].status = "failed"
+                        end
+                        
+                        distribution_results[distribution.event_id] = Dict(
+                            "success" => false,
+                            "error" => string(e),
+                            "retry_attempts" => max_retries,
+                            "timestamp" => now()
+                        )
+                        
+                        failed_distributions += 1
+                        println("      ❌ $(distribution.event_type): All attempts failed due to exceptions")
+                    else
+                        # Wait before retry
+                        sleep(retry_delay)
+                        retry_delay *= 1.5  # Exponential backoff
+                    end
                 end
-                
-                # Small delay between distributions
-                sleep(0.1)
-                
-            catch e
-                distributions[findfirst(d -> d.event_id == distribution.event_id, distributions)].status = "failed"
-                failed_distributions += 1
-                println("      ❌ $(distribution.event_type): Exception - $e")
             end
+            
+            # Small delay between distributions
+            sleep(0.1)
         end
         
         # Delay between batches
@@ -357,10 +481,49 @@ function execute_cross_chain_distributions(config::FeeDistributionConfig,
         end
     end
     
-    println("\n📊 Distribution Results:")
+    println("\n📊 Enhanced Distribution Results:")
     println("   Successful: $successful_distributions")
     println("   Failed: $failed_distributions")
     println("   Success Rate: $(round(successful_distributions / (successful_distributions + failed_distributions) * 100, digits=1))%")
+    
+    # Enhanced reporting with detailed metrics
+    if !isempty(distribution_results)
+        successful_results = filter(r -> r.second["success"], distribution_results)
+        failed_results = filter(r -> !r.second["success"], distribution_results)
+        
+        if !isempty(successful_results)
+            avg_processing_time = mean([r.second["processing_time"] for r in successful_results])
+            println("   Average Processing Time: $(round(avg_processing_time, digits=2))s")
+        end
+        
+        if !isempty(failed_results)
+            error_types = Dict{String, Int}()
+            for result in failed_results
+                error_msg = get(result.second, "error", "unknown")
+                error_types[error_msg] = get(error_types, error_msg, 0) + 1
+            end
+            println("   Top Error Types:")
+            for (error, count) in sort(collect(error_types), by=x->x[2], rev=true)[1:min(3, length(error_types))]
+                println("     - $error: $count occurrences")
+            end
+        end
+    end
+    
+    # Save detailed results for analysis
+    results_path = "reports/distribution_results_$(Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")).json"
+    mkpath(dirname(results_path))
+    open(results_path, "w") do f
+        JSON3.pretty(f, Dict(
+            "timestamp" => now(),
+            "total_distributions" => length(distributions),
+            "successful" => successful_distributions,
+            "failed" => failed_distributions,
+            "success_rate" => successful_distributions / (successful_distributions + failed_distributions),
+            "detailed_results" => distribution_results
+        ))
+    end
+    
+    println("   📄 Detailed results saved to: $results_path")
     
     return successful_distributions, failed_distributions
 end

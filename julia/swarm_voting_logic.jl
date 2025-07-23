@@ -2,6 +2,16 @@
 # Sprint 4: Drone Validation Swarm Development
 # Gujarat LandChain × JuliaOS Project
 
+# TODO: FUTURE ENHANCEMENTS - Swarm Voting Improvements:
+# 1. ✅ ENHANCED: Quorum rule with dynamic adjustment based on agent quality and location
+# 2. ✅ ENHANCED: Dispute resolution with comprehensive analysis and multiple strategies
+# 3. ✅ ENHANCED: Quality-based agent prioritization and selection
+# 4. 🔄 NEEDS WORK: Real-time agent performance monitoring and adaptation
+# 5. 🔄 NEEDS WORK: Advanced consensus algorithms (Byzantine fault tolerance)
+# 6. 🔄 NEEDS WORK: Machine learning-based agent reputation scoring
+# 7. 🔄 NEEDS WORK: Cross-chain dispute resolution coordination
+# 8. 🔄 NEEDS WORK: Performance optimization for large-scale swarms
+
 """
 Democratic Consensus Mechanism for Drone Validation Swarm
 - Objective: Implement ⅔ quorum rule for land parcel validation
@@ -348,11 +358,57 @@ function execute_swarm_voting(swarm::SwarmValidationSystem,
     
     println("✅ Eligible agents: $(length(eligible_agents))")
     
-    # Check quorum requirement
-    quorum_needed = ceil(Int, length(eligible_agents) * swarm.consensus_config.quorum_threshold)
-    participating_agents = eligible_agents[1:min(length(eligible_agents), quorum_needed + 2)]  # Slight over-participation
+    # Enhanced quorum requirement with dynamic adjustment
+    quorum_config = Dict{String, Any}()
     
-    println("📊 Quorum: $quorum_needed agents, Participating: $(length(participating_agents))")
+    # Base quorum calculation
+    base_quorum_needed = ceil(Int, length(eligible_agents) * swarm.consensus_config.quorum_threshold)
+    
+    # Dynamic quorum adjustment based on agent quality and location
+    quality_bonus = 0.0
+    location_bonus = 0.0
+    
+    # Quality bonus: if average agent quality is high, reduce quorum requirement
+    avg_agent_quality = mean([agent.performance_metrics["accuracy"] for agent in eligible_agents])
+    if avg_agent_quality > 0.85
+        quality_bonus = -0.1  # 10% reduction for high-quality agents
+    elseif avg_agent_quality < 0.7
+        quality_bonus = 0.1   # 10% increase for low-quality agents
+    end
+    
+    # Location bonus: if agents are close to target, reduce quorum requirement
+    avg_distance = mean([calculate_distance(agent.location, target_location) for agent in eligible_agents])
+    if avg_distance < 5.0  # Within 5km
+        location_bonus = -0.05  # 5% reduction for nearby agents
+    elseif avg_distance > 20.0  # Beyond 20km
+        location_bonus = 0.05   # 5% increase for distant agents
+    end
+    
+    # Apply bonuses with bounds
+    adjusted_quorum_ratio = max(0.5, min(0.9, swarm.consensus_config.quorum_threshold + quality_bonus + location_bonus))
+    quorum_needed = ceil(Int, length(eligible_agents) * adjusted_quorum_ratio)
+    
+    # Ensure minimum participation
+    quorum_needed = max(quorum_needed, swarm.consensus_config.min_participants)
+    
+    # Select participating agents with quality-based prioritization
+    sorted_agents = sort(eligible_agents, by=agent -> agent.performance_metrics["accuracy"], rev=true)
+    participating_agents = sorted_agents[1:min(length(sorted_agents), quorum_needed + 3)]  # Include extra for redundancy
+    
+    quorum_config["base_quorum"] = base_quorum_needed
+    quorum_config["adjusted_quorum"] = quorum_needed
+    quorum_config["quality_bonus"] = quality_bonus
+    quorum_config["location_bonus"] = location_bonus
+    quorum_config["adjusted_ratio"] = adjusted_quorum_ratio
+    quorum_config["avg_agent_quality"] = avg_agent_quality
+    quorum_config["avg_distance"] = avg_distance
+    
+    println("📊 Enhanced Quorum Analysis:")
+    println("   Base Quorum: $base_quorum_needed agents")
+    println("   Adjusted Quorum: $quorum_needed agents (ratio: $(round(adjusted_quorum_ratio, digits=3)))")
+    println("   Quality Bonus: $(round(quality_bonus*100, digits=1))% (avg quality: $(round(avg_agent_quality, digits=3)))")
+    println("   Location Bonus: $(round(location_bonus*100, digits=1))% (avg distance: $(round(avg_distance, digits=1))km)")
+    println("   Participating: $(length(participating_agents)) agents")
     
     # Collect validation results from each participating agent
     validation_results = ValidationResult[]
@@ -518,30 +574,86 @@ function handle_dispute(swarm::SwarmValidationSystem,
     
     println("🚨 Handling dispute: $dispute_id")
     
-    # Analyze conflict patterns
+    # Enhanced conflict pattern analysis
+    dispute_analysis = Dict{String, Any}()
+    
+    # Statistical analysis of conflicts
     confidence_variance = var([r.confidence for r in conflicting_results])
     quality_variance = var([r.image_quality_score for r in conflicting_results])
+    processing_time_variance = var([r.processing_time for r in conflicting_results])
     
-    # Determine resolution strategy
+    # Classification diversity analysis
+    classifications = [r.predicted_class for r in conflicting_results]
+    unique_classifications = length(Set(classifications))
+    classification_counts = Dict{String, Int}()
+    for class_name in classifications
+        classification_counts[class_name] = get(classification_counts, class_name, 0) + 1
+    end
+    
+    # Agent reliability analysis
+    agent_reliabilities = [swarm.active_agents[r.agent_id].reputation_score for r in conflicting_results]
+    avg_reliability = mean(agent_reliabilities)
+    reliability_variance = var(agent_reliabilities)
+    
+    dispute_analysis["confidence_variance"] = confidence_variance
+    dispute_analysis["quality_variance"] = quality_variance
+    dispute_analysis["processing_time_variance"] = processing_time_variance
+    dispute_analysis["unique_classifications"] = unique_classifications
+    dispute_analysis["classification_distribution"] = classification_counts
+    dispute_analysis["avg_agent_reliability"] = avg_reliability
+    dispute_analysis["reliability_variance"] = reliability_variance
+    
+    # Enhanced resolution strategy determination
     resolution_strategy = ""
     escalation_required = false
     human_review_needed = false
     additional_validation_requested = false
+    resolution_priority = "normal"
     
-    if confidence_variance > 0.05  # High confidence variance
-        resolution_strategy = "confidence_weighted_review"
+    # Strategy 1: High confidence variance - use weighted consensus
+    if confidence_variance > 0.08
+        resolution_strategy = "confidence_weighted_consensus"
         additional_validation_requested = true
-    elseif quality_variance > 0.1  # High quality variance
-        resolution_strategy = "quality_based_filtering"
+        resolution_priority = "high"
+        
+    # Strategy 2: High quality variance - filter low-quality results
+    elseif quality_variance > 0.15
+        resolution_strategy = "quality_filtered_revote"
         additional_validation_requested = true
-    elseif length(Set([r.predicted_class for r in conflicting_results])) > 3  # Too many different predictions
+        resolution_priority = "medium"
+        
+    # Strategy 3: Too many different classifications - expert review
+    elseif unique_classifications > 3
         resolution_strategy = "expert_human_review"
         human_review_needed = true
         escalation_required = true
-    else
-        resolution_strategy = "additional_agent_voting"
+        resolution_priority = "critical"
+        
+    # Strategy 4: Low agent reliability - additional high-quality agents
+    elseif avg_reliability < 0.7
+        resolution_strategy = "high_reliability_agent_recruitment"
         additional_validation_requested = true
+        resolution_priority = "high"
+        
+    # Strategy 5: Processing time variance - retry with consistent timing
+    elseif processing_time_variance > 50.0  # High processing time variance
+        resolution_strategy = "timing_optimized_retry"
+        additional_validation_requested = true
+        resolution_priority = "medium"
+        
+    # Strategy 6: Default - additional voting with enhanced criteria
+    else
+        resolution_strategy = "enhanced_criteria_voting"
+        additional_validation_requested = true
+        resolution_priority = "normal"
     end
+    
+    # Add resolution metadata
+    dispute_analysis["resolution_strategy"] = resolution_strategy
+    dispute_analysis["resolution_priority"] = resolution_priority
+    dispute_analysis["escalation_required"] = escalation_required
+    dispute_analysis["human_review_needed"] = human_review_needed
+    dispute_analysis["additional_validation_requested"] = additional_validation_requested
     
     # Calculate confidence in resolution
     resolution_confidence = 1.0 - consensus_decision.decision_certainty
@@ -558,10 +670,15 @@ function handle_dispute(swarm::SwarmValidationSystem,
         resolution_confidence
     )
     
-    println("   Resolution Strategy: $resolution_strategy")
-    println("   Escalation Required: $escalation_required")
-    println("   Human Review Needed: $human_review_needed")
-    println("   Additional Validation: $additional_validation_requested")
+    println("   📊 Dispute Analysis:")
+    println("     Confidence Variance: $(round(confidence_variance, digits=4))")
+    println("     Quality Variance: $(round(quality_variance, digits:4))")
+    println("     Unique Classifications: $unique_classifications")
+    println("     Avg Agent Reliability: $(round(avg_reliability, digits=3))")
+    println("   🎯 Resolution Strategy: $resolution_strategy (Priority: $resolution_priority)")
+    println("   ⚡ Escalation Required: $escalation_required")
+    println("   👤 Human Review Needed: $human_review_needed")
+    println("   🔄 Additional Validation: $additional_validation_requested")
     
     return dispute
 end

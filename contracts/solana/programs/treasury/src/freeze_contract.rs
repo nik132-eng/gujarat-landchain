@@ -1,9 +1,13 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Mint, Transfer, FreezeAccount, ThawAccount};
+use anchor_spl::token::{self, Token, TokenAccount, Mint, FreezeAccount, ThawAccount};
 use crate::LandParcel;
 
-declare_id!("ULPinFreeze111111111111111111111111111111");
+// TODO: FUTURE FIX - Address Anchor framework warnings:
+// 1. Update solana_program dependency to resolve cfg warnings
+// 2. Remove unused Transfer import (already done)
+// 3. Consider updating Anchor framework version for better compatibility
 
+declare_id!("ULPinTreasury111111111111111111111111111111");
 #[program]
 pub mod ulpin_freeze {
     use super::*;
@@ -44,8 +48,11 @@ pub mod ulpin_freeze {
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
         token::freeze_account(cpi_ctx)?;
 
+        // Convert ulpin_id from [u8; 64] to String for event emission
+        let ulpin_id_string = String::from_utf8_lossy(&land_parcel.ulpin_id).trim_matches('\0').to_string();
+        
         emit!(NFTFrozen {
-            ulpin_id: land_parcel.ulpin_id.clone(),
+            ulpin_id: ulpin_id_string,
             nft_mint: ctx.accounts.nft_mint.key(),
             freeze_duration: duration_seconds,
         });
@@ -84,8 +91,11 @@ pub mod ulpin_freeze {
         land_parcel.freeze_start_timestamp = None;
         land_parcel.freeze_duration = None;
 
+        // Convert ulpin_id from [u8; 64] to String for event emission
+        let ulpin_id_string = String::from_utf8_lossy(&land_parcel.ulpin_id).trim_matches('\0').to_string();
+        
         emit!(NFTThawed {
-            ulpin_id: land_parcel.ulpin_id.clone(),
+            ulpin_id: ulpin_id_string,
             nft_mint: ctx.accounts.nft_mint.key(),
         });
 
