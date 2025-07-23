@@ -37,10 +37,21 @@ contract CrossChainAtomicSwap is ReentrancyGuard, Pausable, AccessControl {
     // Supported tokens
     IERC20 public immutable USDC_POLYGON;
     
+    // Price oracle integration (Chainlink/Pyth)
+    address public priceOracle;
+    
     // Wormhole bridge integration
     address public immutable WORMHOLE_CORE_BRIDGE;
     uint16 public constant SOLANA_CHAIN_ID = 1;
     uint16 public constant POLYGON_CHAIN_ID = 5;
+    
+    // Multi-signature bridge verification
+    mapping(bytes32 => uint256) public relayerConfirmations;
+    mapping(bytes32 => mapping(address => bool)) public hasConfirmed;
+    uint256 public constant REQUIRED_CONFIRMATIONS = 3;
+    
+    // User nonces for secure swap ID generation
+    mapping(address => uint256) public userNonces;
 
     // Swap configuration
     struct SwapConfig {
@@ -142,19 +153,23 @@ contract CrossChainAtomicSwap is ReentrancyGuard, Pausable, AccessControl {
      * @dev Constructor initializes the atomic swap contract
      * @param _usdcPolygon USDC token contract address on Polygon
      * @param _wormholeCorebridge Wormhole core bridge contract address
+     * @param _priceOracle Price oracle contract address (Chainlink/Pyth)
      * @param _admin Admin address for role management
      */
     constructor(
         address _usdcPolygon,
         address _wormholeCorebridge,
+        address _priceOracle,
         address _admin
     ) {
         require(_usdcPolygon != address(0), "Invalid USDC address");
         require(_wormholeCorebridge != address(0), "Invalid Wormhole bridge address");
+        require(_priceOracle != address(0), "Invalid price oracle address");
         require(_admin != address(0), "Invalid admin address");
 
         USDC_POLYGON = IERC20(_usdcPolygon);
         WORMHOLE_CORE_BRIDGE = _wormholeCorebridge;
+        priceOracle = _priceOracle;
 
         // Set up roles
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
@@ -203,13 +218,15 @@ contract CrossChainAtomicSwap is ReentrancyGuard, Pausable, AccessControl {
         uint256 slippageBps = ((netPolygonAmount - minSolanaAmount) * 10000) / netPolygonAmount;
         require(slippageBps <= swapConfig.maxSlippageBps, "Slippage exceeds maximum");
 
-        // Generate unique swap ID
+        // Generate unique swap ID with nonce
+        uint256 nonce = userNonces[msg.sender]++;
         swapId = keccak256(abi.encodePacked(
             msg.sender,
+            nonce,
             solanaRecipient,
             polygonAmount,
             block.timestamp,
-            block.number
+            blockhash(block.number - 1)
         ));
 
         require(atomicSwaps[swapId].swapId == bytes32(0), "Swap ID collision");
@@ -256,20 +273,42 @@ contract CrossChainAtomicSwap is ReentrancyGuard, Pausable, AccessControl {
     }
 
     /**
-     * @dev Complete atomic swap (called by bridge relayer)
-     * @param swapId Unique swap identifier
+     * @dev Confirm swap completion (called by bridge relayers)
+     * @param swapId Unique swap identifier  
      * @param wormholeMessageHash Wormhole message hash for verification
      */
-    function completeSwap(
+    function confirmSwap(
         bytes32 swapId,
         bytes32 wormholeMessageHash
     ) external onlyRole(BRIDGE_RELAYER_ROLE) nonReentrant {
-        AtomicSwap storage swap = atomicSwaps[swapId];
+        require(!hasConfirmed[swapId][msg.sender], "Already confirmed");
         
+        AtomicSwap storage swap = atomicSwaps[swapId];
         require(swap.swapId != bytes32(0), "Swap does not exist");
         require(swap.status == SwapStatus.INITIATED, "Invalid swap status");
         require(block.timestamp <= swap.timeoutTime, "Swap has timed out");
         require(!processedMessages[wormholeMessageHash], "Message already processed");
+
+        // Record confirmation
+        hasConfirmed[swapId][msg.sender] = true;
+        relayerConfirmations[swapId]++;
+
+        // Check if we have enough confirmations to complete
+        if (relayerConfirmations[swapId] >= REQUIRED_CONFIRMATIONS) {
+            _completeSwap(swapId, wormholeMessageHash);
+        }
+    }
+
+    /**
+     * @dev Internal function to complete swap after confirmations
+     * @param swapId Unique swap identifier
+     * @param wormholeMessageHash Wormhole message hash for verification
+     */
+    function _completeSwap(
+        bytes32 swapId,
+        bytes32 wormholeMessageHash
+    ) internal {
+        AtomicSwap storage swap = atomicSwaps[swapId];
 
         // Mark message as processed
         processedMessages[wormholeMessageHash] = true;
@@ -348,29 +387,29 @@ contract CrossChainAtomicSwap is ReentrancyGuard, Pausable, AccessControl {
     }
 
     /**
-     * @dev Get current exchange rate (Polygon USDC to Solana USDC)
+     * @dev Get current exchange rate from price oracle
      * @return exchangeRate Current exchange rate with 1e18 precision
      */
     function getExchangeRate() public view returns (uint256 exchangeRate) {
-        // For stable-coin swaps, rate should be close to 1:1
-        // Small variations account for bridge fees and liquidity
-        // In production, this would integrate with price oracles
+        // Use price oracle for secure exchange rate
+        (bool success, bytes memory data) = priceOracle.staticcall(
+            abi.encodeWithSignature("latestRoundData()")
+        );
         
-        uint256 baseRate = 1e18; // 1:1 base rate
-        
-        // Add small variations based on network conditions
-        // This simulates real-world bridge dynamics
-        uint256 variation = (block.timestamp % 100) * 1e14; // ±0.01% variation
-        
-        if ((block.timestamp / 100) % 2 == 0) {
-            exchangeRate = baseRate + variation;
+        if (success && data.length >= 32) {
+            (, int256 price, , , ) = abi.decode(data, (uint80, int256, uint256, uint256, uint80));
+            require(price > 0, "Invalid oracle price");
+            
+            // Convert price to 1e18 precision (assuming 8-decimal oracle)
+            exchangeRate = uint256(price) * 1e10;
         } else {
-            exchangeRate = baseRate - variation;
+            // Fallback to 1:1 rate for USDC if oracle fails
+            exchangeRate = 1e18;
         }
         
-        // Ensure rate stays within reasonable bounds (±1%)
-        uint256 minRate = 99e16; // 0.99
-        uint256 maxRate = 101e16; // 1.01
+        // Ensure rate stays within reasonable bounds (±5%)
+        uint256 minRate = 95e16; // 0.95
+        uint256 maxRate = 105e16; // 1.05
         
         if (exchangeRate < minRate) exchangeRate = minRate;
         if (exchangeRate > maxRate) exchangeRate = maxRate;
@@ -405,6 +444,15 @@ contract CrossChainAtomicSwap is ReentrancyGuard, Pausable, AccessControl {
         ));
 
         emit CrossChainMessageReceived(messageHash, POLYGON_CHAIN_ID, payload);
+    }
+
+    /**
+     * @dev Update price oracle address (admin only)
+     * @param _priceOracle New price oracle contract address
+     */
+    function updatePriceOracle(address _priceOracle) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_priceOracle != address(0), "Invalid oracle address");
+        priceOracle = _priceOracle;
     }
 
     /**
