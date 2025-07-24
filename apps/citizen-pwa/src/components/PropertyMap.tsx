@@ -313,7 +313,7 @@ export default function PropertyMap({
 
       marker.bindPopup(popupContent, {
         maxWidth: 300,
-        className: 'custom-popup'
+        className: 'custom-popup property-popup'
       })
 
       marker.on('click', () => {

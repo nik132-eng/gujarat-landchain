@@ -254,7 +254,28 @@
   box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Add satellite function to window object */
+/* Z-index management for modals and overlays */
 @layer base {
-  /* This will be available globally */
+  /* Ensure modals appear above map layers */
+  .leaflet-container {
+    z-index: 1 !important;
+  }
+  
+  .leaflet-popup {
+    z-index: 1000 !important;
+  }
+  
+  .leaflet-control {
+    z-index: 1000 !important;
+  }
+  
+  /* Satellite modal should be above everything */
+  .satellite-modal {
+    z-index: 9999 !important;
+  }
+  
+  /* Property popups should be above map but below satellite modal */
+  .property-popup {
+    z-index: 2000 !important;
+  }
 }
