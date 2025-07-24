@@ -1,18 +1,52 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+/* Gujarat LandChain Custom Colors */
 :root {
-  /* Gujarat Government Brand Colors */
-  --gujarat-blue: #1E40AF;
-  --gujarat-blue-light: #3B82F6;
-  --gujarat-blue-dark: #1E3A8A;
-  --gujarat-saffron: #F97316;
-  --gujarat-saffron-light: #FB923C;
-  --gujarat-green: #16A34A;
-  --gujarat-green-light: #22C55E;
-  --gujarat-gold: #EAB308;
-  --gujarat-gold-light: #FDE047;
+  --gujarat-blue-50: #eff6ff;
+  --gujarat-blue-100: #dbeafe;
+  --gujarat-blue-200: #bfdbfe;
+  --gujarat-blue-300: #93c5fd;
+  --gujarat-blue-400: #60a5fa;
+  --gujarat-blue-500: #3b82f6;
+  --gujarat-blue-600: #2563eb;
+  --gujarat-blue-700: #1d4ed8;
+  --gujarat-blue-800: #1e40af;
+  --gujarat-blue-900: #1e3a8a;
+  
+  --gujarat-saffron-50: #fffbeb;
+  --gujarat-saffron-100: #fef3c7;
+  --gujarat-saffron-200: #fde68a;
+  --gujarat-saffron-300: #fcd34d;
+  --gujarat-saffron-400: #fbbf24;
+  --gujarat-saffron-500: #f59e0b;
+  --gujarat-saffron-600: #d97706;
+  --gujarat-saffron-700: #b45309;
+  --gujarat-saffron-800: #92400e;
+  --gujarat-saffron-900: #78350f;
+  
+  --gujarat-green-50: #f0fdf4;
+  --gujarat-green-100: #dcfce7;
+  --gujarat-green-200: #bbf7d0;
+  --gujarat-green-300: #86efac;
+  --gujarat-green-400: #4ade80;
+  --gujarat-green-500: #22c55e;
+  --gujarat-green-600: #16a34a;
+  --gujarat-green-700: #15803d;
+  --gujarat-green-800: #166534;
+  --gujarat-green-900: #14532d;
+  
+  --gujarat-gold-50: #fffbeb;
+  --gujarat-gold-100: #fef3c7;
+  --gujarat-gold-200: #fde68a;
+  --gujarat-gold-300: #fcd34d;
+  --gujarat-gold-400: #fbbf24;
+  --gujarat-gold-500: #f59e0b;
+  --gujarat-gold-600: #d97706;
+  --gujarat-gold-700: #b45309;
+  --gujarat-gold-800: #92400e;
+  --gujarat-gold-900: #78350f;
 }
 
 /* Base layer customizations */
@@ -94,4 +128,133 @@
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .text-gujarat-blue-50 { color: var(--gujarat-blue-50); }
+  .text-gujarat-blue-100 { color: var(--gujarat-blue-100); }
+  .text-gujarat-blue-200 { color: var(--gujarat-blue-200); }
+  .text-gujarat-blue-300 { color: var(--gujarat-blue-300); }
+  .text-gujarat-blue-400 { color: var(--gujarat-blue-400); }
+  .text-gujarat-blue-500 { color: var(--gujarat-blue-500); }
+  .text-gujarat-blue-600 { color: var(--gujarat-blue-600); }
+  .text-gujarat-blue-700 { color: var(--gujarat-blue-700); }
+  .text-gujarat-blue-800 { color: var(--gujarat-blue-800); }
+  .text-gujarat-blue-900 { color: var(--gujarat-blue-900); }
+  
+  .bg-gujarat-blue-50 { background-color: var(--gujarat-blue-50); }
+  .bg-gujarat-blue-100 { background-color: var(--gujarat-blue-100); }
+  .bg-gujarat-blue-200 { background-color: var(--gujarat-blue-200); }
+  .bg-gujarat-blue-300 { background-color: var(--gujarat-blue-300); }
+  .bg-gujarat-blue-400 { background-color: var(--gujarat-blue-400); }
+  .bg-gujarat-blue-500 { background-color: var(--gujarat-blue-500); }
+  .bg-gujarat-blue-600 { background-color: var(--gujarat-blue-600); }
+  .bg-gujarat-blue-700 { background-color: var(--gujarat-blue-700); }
+  .bg-gujarat-blue-800 { background-color: var(--gujarat-blue-800); }
+  .bg-gujarat-blue-900 { background-color: var(--gujarat-blue-900); }
+  
+  .text-gujarat-saffron-50 { color: var(--gujarat-saffron-50); }
+  .text-gujarat-saffron-100 { color: var(--gujarat-saffron-100); }
+  .text-gujarat-saffron-200 { color: var(--gujarat-saffron-200); }
+  .text-gujarat-saffron-300 { color: var(--gujarat-saffron-300); }
+  .text-gujarat-saffron-400 { color: var(--gujarat-saffron-400); }
+  .text-gujarat-saffron-500 { color: var(--gujarat-saffron-500); }
+  .text-gujarat-saffron-600 { color: var(--gujarat-saffron-600); }
+  .text-gujarat-saffron-700 { color: var(--gujarat-saffron-700); }
+  .text-gujarat-saffron-800 { color: var(--gujarat-saffron-800); }
+  .text-gujarat-saffron-900 { color: var(--gujarat-saffron-900); }
+  
+  .bg-gujarat-saffron-50 { background-color: var(--gujarat-saffron-50); }
+  .bg-gujarat-saffron-100 { background-color: var(--gujarat-saffron-100); }
+  .bg-gujarat-saffron-200 { background-color: var(--gujarat-saffron-200); }
+  .bg-gujarat-saffron-300 { background-color: var(--gujarat-saffron-300); }
+  .bg-gujarat-saffron-400 { background-color: var(--gujarat-saffron-400); }
+  .bg-gujarat-saffron-500 { background-color: var(--gujarat-saffron-500); }
+  .bg-gujarat-saffron-600 { background-color: var(--gujarat-saffron-600); }
+  .bg-gujarat-saffron-700 { background-color: var(--gujarat-saffron-700); }
+  .bg-gujarat-saffron-800 { background-color: var(--gujarat-saffron-800); }
+  .bg-gujarat-saffron-900 { background-color: var(--gujarat-saffron-900); }
+  
+  .text-gujarat-green-50 { color: var(--gujarat-green-50); }
+  .text-gujarat-green-100 { color: var(--gujarat-green-100); }
+  .text-gujarat-green-200 { color: var(--gujarat-green-200); }
+  .text-gujarat-green-300 { color: var(--gujarat-green-300); }
+  .text-gujarat-green-400 { color: var(--gujarat-green-400); }
+  .text-gujarat-green-500 { color: var(--gujarat-green-500); }
+  .text-gujarat-green-600 { color: var(--gujarat-green-600); }
+  .text-gujarat-green-700 { color: var(--gujarat-green-700); }
+  .text-gujarat-green-800 { color: var(--gujarat-green-800); }
+  .text-gujarat-green-900 { color: var(--gujarat-green-900); }
+  
+  .bg-gujarat-green-50 { background-color: var(--gujarat-green-50); }
+  .bg-gujarat-green-100 { background-color: var(--gujarat-green-100); }
+  .bg-gujarat-green-200 { background-color: var(--gujarat-green-200); }
+  .bg-gujarat-green-300 { background-color: var(--gujarat-green-300); }
+  .bg-gujarat-green-400 { background-color: var(--gujarat-green-400); }
+  .bg-gujarat-green-500 { background-color: var(--gujarat-green-500); }
+  .bg-gujarat-green-600 { background-color: var(--gujarat-green-600); }
+  .bg-gujarat-green-700 { background-color: var(--gujarat-green-700); }
+  .bg-gujarat-green-800 { background-color: var(--gujarat-green-800); }
+  .bg-gujarat-green-900 { background-color: var(--gujarat-green-900); }
+  
+  .text-gujarat-gold-50 { color: var(--gujarat-gold-50); }
+  .text-gujarat-gold-100 { color: var(--gujarat-gold-100); }
+  .text-gujarat-gold-200 { color: var(--gujarat-gold-200); }
+  .text-gujarat-gold-300 { color: var(--gujarat-gold-300); }
+  .text-gujarat-gold-400 { color: var(--gujarat-gold-400); }
+  .text-gujarat-gold-500 { color: var(--gujarat-gold-500); }
+  .text-gujarat-gold-600 { color: var(--gujarat-gold-600); }
+  .text-gujarat-gold-700 { color: var(--gujarat-gold-700); }
+  .text-gujarat-gold-800 { color: var(--gujarat-gold-800); }
+  .text-gujarat-gold-900 { color: var(--gujarat-gold-900); }
+  
+  .bg-gujarat-gold-50 { background-color: var(--gujarat-gold-50); }
+  .bg-gujarat-gold-100 { background-color: var(--gujarat-gold-100); }
+  .bg-gujarat-gold-200 { background-color: var(--gujarat-gold-200); }
+  .bg-gujarat-gold-300 { background-color: var(--gujarat-gold-300); }
+  .bg-gujarat-gold-400 { background-color: var(--gujarat-gold-400); }
+  .bg-gujarat-gold-500 { background-color: var(--gujarat-gold-500); }
+  .bg-gujarat-gold-600 { background-color: var(--gujarat-gold-600); }
+  .bg-gujarat-gold-700 { background-color: var(--gujarat-gold-700); }
+  .bg-gujarat-gold-800 { background-color: var(--gujarat-gold-800); }
+  .bg-gujarat-gold-900 { background-color: var(--gujarat-gold-900); }
+  
+  .border-gujarat-blue-200 { border-color: var(--gujarat-blue-200); }
+  .border-gujarat-blue-300 { border-color: var(--gujarat-blue-300); }
+  .border-gujarat-blue-400 { border-color: var(--gujarat-blue-400); }
+  .border-gujarat-blue-500 { border-color: var(--gujarat-blue-500); }
+  .border-gujarat-blue-600 { border-color: var(--gujarat-blue-600); }
+  
+  .border-gujarat-saffron-200 { border-color: var(--gujarat-saffron-200); }
+  .border-gujarat-saffron-300 { border-color: var(--gujarat-saffron-300); }
+  .border-gujarat-saffron-400 { border-color: var(--gujarat-saffron-400); }
+  .border-gujarat-saffron-500 { border-color: var(--gujarat-saffron-500); }
+  .border-gujarat-saffron-600 { border-color: var(--gujarat-saffron-600); }
+  
+  .border-gujarat-green-200 { border-color: var(--gujarat-green-200); }
+  .border-gujarat-green-300 { border-color: var(--gujarat-green-300); }
+  .border-gujarat-green-400 { border-color: var(--gujarat-green-400); }
+  .border-gujarat-green-500 { border-color: var(--gujarat-green-500); }
+  .border-gujarat-green-600 { border-color: var(--gujarat-green-600); }
+  
+  .border-gujarat-gold-200 { border-color: var(--gujarat-gold-200); }
+  .border-gujarat-gold-300 { border-color: var(--gujarat-gold-300); }
+  .border-gujarat-gold-400 { border-color: var(--gujarat-gold-400); }
+  .border-gujarat-gold-500 { border-color: var(--gujarat-gold-500); }
+  .border-gujarat-gold-600 { border-color: var(--gujarat-gold-600); }
+}
+
+/* Demo styles */
+.card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+}
+
+.shadow-soft-lg {
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Add satellite function to window object */
+@layer base {
+  /* This will be available globally */
 }
