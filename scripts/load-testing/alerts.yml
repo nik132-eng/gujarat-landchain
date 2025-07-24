@@ -1,0 +1,116 @@
+groups:
+  - name: landchain-performance
+    rules:
+      # High response time alert
+      - alert: HighResponseTime
+        expr: http_request_duration_seconds{quantile="0.95"} > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s (threshold: 2s)"
+
+      # High error rate alert
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # Database connection issues
+      - alert: DatabaseConnectionIssues
+        expr: pg_stat_database_numbackends > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connections"
+          description: "Database has {{ $value }} active connections"
+
+      # Memory usage alert
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }}"
+
+      # CPU usage alert
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%"
+
+  - name: load-testing-specific
+    rules:
+      # Load test failure rate
+      - alert: LoadTestFailureRate
+        expr: rate(locust_requests_failed_total[5m]) / rate(locust_requests_total[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Load test failure rate high"
+          description: "Load test failure rate is {{ $value | humanizePercentage }}"
+
+      # Load test response time degradation
+      - alert: LoadTestResponseTimeDegradation
+        expr: histogram_quantile(0.95, rate(locust_request_duration_seconds_bucket[5m])) > 3
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Load test response time degraded"
+          description: "95th percentile response time is {{ $value }}s"
+
+      # User count alert
+      - alert: LoadTestUserCount
+        expr: locust_users_current > 950
+        for: 1m
+        labels:
+          severity: info
+        annotations:
+          summary: "Load test approaching target"
+          description: "Current users: {{ $value }}/1000"
+
+  - name: application-health
+    rules:
+      # API endpoint down
+      - alert: APIEndpointDown
+        expr: up{job="landchain-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API endpoint is down"
+          description: "LandChain API is not responding"
+
+      # Database down
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database is down"
+          description: "PostgreSQL database is not responding"
+
+      # Redis down
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache is not responding" 
