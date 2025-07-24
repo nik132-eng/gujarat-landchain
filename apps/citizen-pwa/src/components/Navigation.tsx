@@ -1,9 +1,10 @@
-'use client'
+"use client";
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
+import ClientOnly from './ClientOnly'
 
 const navigation = [
   { name: 'Home', href: '/', icon: '🏠' },
@@ -18,43 +19,42 @@ export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-r from-gujarat-blue-600 to-gujarat-saffron-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">GL</span>
               </div>
-              <span className="font-bold text-xl text-gray-900">Gujarat LandChain</span>
+              <span className="text-lg font-semibold text-gray-900">Gujarat LandChain</span>
             </Link>
           </div>
 
           {/* Desktop Navigation */}
-                    {/* Desktop Navigation */}
           <div className="hidden lg:flex lg:items-center lg:space-x-8">
             <Link 
               href="/" 
-              className="text-white hover:text-gujarat-saffron-200 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              className="text-gray-700 hover:text-gujarat-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
               Home
             </Link>
             <Link 
               href="/map" 
-              className="text-white hover:text-gujarat-saffron-200 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              className="text-gray-700 hover:text-gujarat-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
               Property Map
             </Link>
             <Link 
               href="/transfers" 
-              className="text-white hover:text-gujarat-saffron-200 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              className="text-gray-700 hover:text-gujarat-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
               Transfers
             </Link>
             <Link 
               href="/wallet" 
-              className="text-white hover:text-gujarat-saffron-200 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              className="text-gray-700 hover:text-gujarat-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
               Wallet
             </Link>
@@ -63,7 +63,9 @@ export default function Navigation() {
           {/* User Menu */}
           <div className="flex items-center space-x-4">
             <div className="hidden md:block">
-              <WalletMultiButton className="!bg-gujarat-saffron-500 hover:!bg-gujarat-saffron-600 !rounded-lg !px-4 !py-2 !text-sm !font-medium !transition-colors" />
+              <ClientOnly fallback={<div className="w-32 h-10 bg-gray-200 rounded-lg animate-pulse"></div>}>
+                <WalletMultiButton className="!bg-gujarat-saffron-500 hover:!bg-gujarat-saffron-600 !rounded-lg !px-4 !py-2 !text-sm !font-medium !transition-colors" />
+              </ClientOnly>
             </div>
             
             {/* Mobile menu button */}
@@ -98,9 +100,8 @@ export default function Navigation() {
                   className={`flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium ${
                     isActive
                       ? 'bg-gujarat-blue-50 text-gujarat-blue-600'
-                      : 'text-gray-600 hover:text-gujarat-blue-600 hover:bg-gray-50'
+                      : 'text-gray-700 hover:text-gujarat-blue-600 hover:bg-gray-50'
                   }`}
-                  onClick={() => setIsOpen(false)}
                 >
                   <span>{item.icon}</span>
                   <span>{item.name}</span>
@@ -108,7 +109,9 @@ export default function Navigation() {
               )
             })}
             <div className="px-3 py-2">
-              <WalletMultiButton className="!bg-gujarat-saffron-500 hover:!bg-gujarat-saffron-600 !rounded-lg !px-4 !py-2 !text-sm !font-medium !transition-colors !w-full" />
+              <ClientOnly fallback={<div className="w-full h-10 bg-gray-200 rounded-lg animate-pulse"></div>}>
+                <WalletMultiButton className="!w-full !bg-gujarat-saffron-500 hover:!bg-gujarat-saffron-600 !rounded-lg !px-4 !py-2 !text-sm !font-medium !transition-colors" />
+              </ClientOnly>
             </div>
           </div>
         </div>
