@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import SolanaWalletProvider from '@/components/SolanaWalletProvider'
-import JuliaOSProvider from '@/components/JuliaOSProvider'
+import SolanaWalletProvider from '../components/SolanaWalletProvider'
+import { JuliaOSProvider } from '../components/JuliaOSProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 

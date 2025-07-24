@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { RBACProvider, useRBAC, LoginForm, UserManagement } from '../components/RBACSystem';
 import { BatchApprovalQueue } from '../components/BatchApprovalQueue';
 import { AuditLogExport } from '../components/AuditLogExport';
-import { GovernanceVotingInterface } from '../components/GovernanceVotingInterface';
+import GovernanceVotingInterface from '../components/GovernanceVotingInterface';
+import LandListingInterface from '../components/LandListingInterface';
 
 // Dashboard navigation component
 const DashboardNavigation: React.FC<{ activeTab: string; onTabChange: (tab: string) => void }> = ({ 
@@ -19,6 +20,12 @@ const DashboardNavigation: React.FC<{ activeTab: string; onTabChange: (tab: stri
       name: 'Overview',
       icon: '📊',
       permission: null
+    },
+    {
+      id: 'land-listings',
+      name: 'Land Listings',
+      icon: '🏠',
+      permission: 'create_listing'
     },
     {
       id: 'batch-approval',
@@ -107,6 +114,13 @@ const Overview: React.FC = () => {
 
   const stats = [
     {
+      name: 'Active Land Listings',
+      value: '42',
+      change: '+15%',
+      changeType: 'increase',
+      icon: '🏠'
+    },
+    {
       name: 'Pending Approvals',
       value: '24',
       change: '+12%',
@@ -126,13 +140,6 @@ const Overview: React.FC = () => {
       change: '-3%',
       changeType: 'decrease',
       icon: '⚖️'
-    },
-    {
-      name: 'System Uptime',
-      value: '99.9%',
-      change: '+0.1%',
-      changeType: 'increase',
-      icon: '🟢'
     }
   ];
 
@@ -172,22 +179,29 @@ const Overview: React.FC = () => {
           <div className="flex items-center space-x-3">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <div className="flex-1">
+              <p className="text-sm text-gray-900">New land listing created: Agricultural Land in Anand District</p>
+              <p className="text-xs text-gray-500">5 minutes ago</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div className="flex-1">
+              <p className="text-sm text-gray-900">Customer inquiry received for Residential Plot in Vadodara</p>
+              <p className="text-xs text-gray-500">12 minutes ago</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <div className="flex-1">
               <p className="text-sm text-gray-900">Property GJ-24-001-001-001 approved by Revenue Officer</p>
-              <p className="text-xs text-gray-500">2 minutes ago</p>
+              <p className="text-xs text-gray-500">2 hours ago</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
             <div className="flex-1">
               <p className="text-sm text-gray-900">New dispute case filed for property GJ-24-001-001-002</p>
-              <p className="text-xs text-gray-500">15 minutes ago</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm text-gray-900">System maintenance completed successfully</p>
-              <p className="text-xs text-gray-500">1 hour ago</p>
+              <p className="text-xs text-gray-500">3 hours ago</p>
             </div>
           </div>
         </div>
@@ -209,6 +223,8 @@ const DashboardContent: React.FC = () => {
     switch (activeTab) {
       case 'overview':
         return <Overview />;
+      case 'land-listings':
+        return <LandListingInterface />;
       case 'batch-approval':
         return <BatchApprovalQueue />;
       case 'governance':

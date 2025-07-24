@@ -10,7 +10,7 @@ Governance Voting Interface for Officials
 */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSession } from '../../hooks/useSession';
+import { useSession } from '../hooks/useSession';
 
 // Types and Interfaces
 interface DisputeCase {
@@ -97,20 +97,9 @@ const GovernanceVotingInterface: React.FC = () => {
   const loadDisputes = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      const response = await fetch('/api/disputes', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('glc_access_token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setDisputes(data.disputes);
-      } else {
-        // Fallback to mock data
-        setDisputes(generateMockDisputes());
-      }
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setDisputes(generateMockDisputes());
     } catch (error) {
       console.error('Failed to load disputes:', error);
       setDisputes(generateMockDisputes());
@@ -122,18 +111,9 @@ const GovernanceVotingInterface: React.FC = () => {
   // Load votes for selected case
   const loadVotes = useCallback(async (caseId: string) => {
     try {
-      const response = await fetch(`/api/disputes/${caseId}/votes`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('glc_access_token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setVotes(data.votes);
-      } else {
-        setVotes(generateMockVotes(caseId));
-      }
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setVotes(generateMockVotes(caseId));
     } catch (error) {
       console.error('Failed to load votes:', error);
       setVotes(generateMockVotes(caseId));
@@ -143,23 +123,90 @@ const GovernanceVotingInterface: React.FC = () => {
   // Load activity logs
   const loadActivityLogs = useCallback(async (caseId: string) => {
     try {
-      const response = await fetch(`/api/disputes/${caseId}/activity`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('glc_access_token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setActivityLogs(data.logs);
-      } else {
-        setActivityLogs(generateMockActivityLogs(caseId));
-      }
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setActivityLogs(generateMockActivityLogs(caseId));
     } catch (error) {
       console.error('Failed to load activity logs:', error);
       setActivityLogs(generateMockActivityLogs(caseId));
     }
   }, []);
+
+  // Handle quick vote (approve/reject without modal)
+  const handleQuickVote = async (dispute: DisputeCase, vote: 'approve' | 'reject') => {
+    console.log('Quick vote clicked:', vote, 'for case:', dispute.caseId);
+    
+    if (!currentSession) {
+      alert('Please log in to vote');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Simulate API call with delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Create new vote
+      const newVote: Vote = {
+        voteId: `VOTE-${Date.now()}`,
+        caseId: dispute.caseId,
+        officialId: currentSession.userId,
+        officialName: currentSession.name,
+        vote: vote,
+        reasoning: `Quick ${vote} vote submitted`,
+        timestamp: new Date().toISOString(),
+        evidenceReviewed: []
+      };
+
+      // Add vote to the list
+      setVotes(prev => [...prev, newVote]);
+
+      // Create activity log entry
+      const newActivityLog: ActivityLog = {
+        logId: `LOG-${Date.now()}`,
+        caseId: dispute.caseId,
+        action: 'Quick vote submitted',
+        officialId: currentSession.userId,
+        officialName: currentSession.name,
+        timestamp: new Date().toISOString(),
+        details: `Quick ${vote} vote submitted for case ${dispute.caseId}`
+      };
+
+      // Add activity log
+      setActivityLogs(prev => [...prev, newActivityLog]);
+
+      // Update dispute status if needed
+      const updatedVotes = [...votes, newVote];
+      if (updatedVotes.length >= dispute.requiredVotes) {
+        setDisputes(prev => prev.map(d => 
+          d.caseId === dispute.caseId 
+            ? { ...d, status: 'resolved', currentVotes: updatedVotes.length }
+            : d
+        ));
+      } else {
+        setDisputes(prev => prev.map(d => 
+          d.caseId === dispute.caseId 
+            ? { ...d, currentVotes: updatedVotes.length }
+            : d
+        ));
+      }
+      
+      // Show success message
+      alert(`Vote submitted successfully: ${vote}`);
+    } catch (error) {
+      console.error('Failed to submit quick vote:', error);
+      alert('Failed to submit vote. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle evidence bundle view
+  const handleViewEvidence = (evidenceBundleId: string) => {
+    console.log('View evidence clicked for bundle:', evidenceBundleId);
+    // In a real app, this would open the evidence bundle
+    alert(`Opening evidence bundle: ${evidenceBundleId}\n\nThis would typically open a modal or navigate to an evidence viewer.`);
+  };
 
   // Submit vote
   const submitVote = async () => {
@@ -170,31 +217,60 @@ const GovernanceVotingInterface: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/disputes/${selectedCase.caseId}/vote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('glc_access_token')}`
-        },
-        body: JSON.stringify({
-          vote: voteData.vote,
-          reasoning: voteData.reasoning,
-          evidenceReviewed: voteData.evidenceReviewed
-        })
-      });
+      // Simulate API call with delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Create new vote
+      const newVote: Vote = {
+        voteId: `VOTE-${Date.now()}`,
+        caseId: selectedCase.caseId,
+        officialId: currentSession?.userId || 'OFF-001',
+        officialName: currentSession?.name || 'Current User',
+        vote: voteData.vote,
+        reasoning: voteData.reasoning,
+        timestamp: new Date().toISOString(),
+        evidenceReviewed: voteData.evidenceReviewed
+      };
 
-      if (response.ok) {
-        // Reload votes and activity logs
-        await loadVotes(selectedCase.caseId);
-        await loadActivityLogs(selectedCase.caseId);
-        setShowVoteModal(false);
-        setVoteData({ vote: 'approve', reasoning: '', evidenceReviewed: [] });
-        
-        // Show success message
-        alert('Vote submitted successfully');
+      // Add vote to the list
+      setVotes(prev => [...prev, newVote]);
+
+      // Create activity log entry
+      const newActivityLog: ActivityLog = {
+        logId: `LOG-${Date.now()}`,
+        caseId: selectedCase.caseId,
+        action: 'Vote submitted',
+        officialId: currentSession?.userId || 'OFF-001',
+        officialName: currentSession?.name || 'Current User',
+        timestamp: new Date().toISOString(),
+        details: `Vote submitted: ${voteData.vote} with reasoning: ${voteData.reasoning}`
+      };
+
+      // Add activity log
+      setActivityLogs(prev => [...prev, newActivityLog]);
+
+      // Update dispute status if needed
+      const updatedVotes = [...votes, newVote];
+      if (updatedVotes.length >= selectedCase.requiredVotes) {
+        setDisputes(prev => prev.map(d => 
+          d.caseId === selectedCase.caseId 
+            ? { ...d, status: 'resolved', currentVotes: updatedVotes.length }
+            : d
+        ));
       } else {
-        throw new Error('Failed to submit vote');
+        setDisputes(prev => prev.map(d => 
+          d.caseId === selectedCase.caseId 
+            ? { ...d, currentVotes: updatedVotes.length }
+            : d
+        ));
       }
+
+      // Reset form and close modal
+      setShowVoteModal(false);
+      setVoteData({ vote: 'approve', reasoning: '', evidenceReviewed: [] });
+      
+      // Show success message
+      alert('Vote submitted successfully');
     } catch (error) {
       console.error('Failed to submit vote:', error);
       alert('Failed to submit vote. Please try again.');
@@ -378,6 +454,7 @@ const GovernanceVotingInterface: React.FC = () => {
                             ? 'border-blue-500 bg-blue-50'
                             : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                         }`}
+                        style={{ userSelect: 'none' }}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div>
@@ -421,6 +498,37 @@ const GovernanceVotingInterface: React.FC = () => {
                             ✓ You have voted on this case
                           </div>
                         )}
+
+                        {/* Action Buttons */}
+                        <div className="mt-3 pt-3 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-medium text-gray-700">ACTIONS</span>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleCaseSelect(dispute)}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+                              >
+                                View
+                              </button>
+                              {!hasUserVoted(dispute.caseId) && dispute.status === 'voting' && (
+                                <>
+                                  <button
+                                    onClick={() => handleQuickVote(dispute, 'approve')}
+                                    className="text-green-600 hover:text-green-800 text-sm font-medium px-2 py-1 rounded hover:bg-green-50 transition-colors"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleQuickVote(dispute, 'reject')}
+                                    className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ))
                   )}
@@ -479,7 +587,10 @@ const GovernanceVotingInterface: React.FC = () => {
 
                   {/* Evidence Bundle Link */}
                   {selectedCase.evidenceBundleId && canViewEvidence && (
-                    <button className="w-full mt-3 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                    <button 
+                      onClick={() => handleViewEvidence(selectedCase.evidenceBundleId!)}
+                      className="w-full mt-3 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
+                    >
                       View Evidence Bundle
                     </button>
                   )}
