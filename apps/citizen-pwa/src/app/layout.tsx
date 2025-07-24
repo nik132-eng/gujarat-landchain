@@ -4,6 +4,7 @@ import Navigation from '@/components/Navigation'
 import SolanaWalletProvider from '@/components/SolanaWalletProvider'
 import PWAStatus from '@/components/PWAStatus'
 import SessionStatus from '@/components/SessionStatus'
+import ClientLayout from '@/components/ClientLayout'
 
 export const metadata: Metadata = {
   title: 'Gujarat LandChain - Citizen Portal',
@@ -42,25 +43,15 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-gray-50 text-gray-900 antialiased">
         <SolanaWalletProvider>
-          <div className="flex flex-col min-h-screen">
-            <header className="bg-white shadow-sm border-b">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                  <div className="flex items-center">
-                    <h1 className="text-xl font-bold text-gray-900">
-                      Gujarat LandChain
-                    </h1>
-                  </div>
-                  <SessionStatus variant="dropdown" showCountdown={true} showUserInfo={true} />
-                </div>
-              </div>
-            </header>
-            <Navigation />
-            <main className="flex-1">
-              {children}
-            </main>
-            <PWAStatus />
-          </div>
+          <ClientLayout>
+            <div className="flex flex-col min-h-screen">
+              <Navigation />
+              <main className="flex-1">
+                {children}
+              </main>
+              <PWAStatus />
+            </div>
+          </ClientLayout>
         </SolanaWalletProvider>
       </body>
     </html>
