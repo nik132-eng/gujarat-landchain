@@ -1,3 +1,5 @@
+"use client";
+
 // GL-0603: Session Status Component
 // Sprint 6: JuliaOS Wallet Integration
 // Gujarat LandChain × JuliaOS Project

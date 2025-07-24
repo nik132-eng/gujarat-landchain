@@ -9,6 +9,8 @@ Authentication Wrapper Component
 - Integration: Wraps protected components and handles auth state
 */
 
+"use client";
+
 import React, { useEffect, useState } from 'react';
 import { useSession } from '../hooks/useSession';
 import AadhaarAuthentication from '../../frontend/components/AadhaarAuthentication';

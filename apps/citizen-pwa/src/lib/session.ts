@@ -173,6 +173,7 @@ class SessionManager {
 
   // Generate device-specific ID
   private getDeviceId(): string {
+    if (typeof window === 'undefined') return '';
     let deviceId = localStorage.getItem('glc_device_id');
     if (!deviceId) {
       deviceId = 'device_' + CryptoJS.lib.WordArray.random(16).toString();
@@ -183,16 +184,19 @@ class SessionManager {
 
   // Get current access token
   public getAccessToken(): string | null {
+    if (typeof window === 'undefined') return null;
     return localStorage.getItem(SESSION_CONFIG.STORAGE_KEYS.ACCESS_TOKEN);
   }
 
   // Get refresh token
   private getRefreshToken(): string | null {
+    if (typeof window === 'undefined') return null;
     return localStorage.getItem(SESSION_CONFIG.STORAGE_KEYS.REFRESH_TOKEN);
   }
 
   // Get current user session
   public getCurrentSession(): UserSession | null {
+    if (typeof window === 'undefined') return null;
     try {
       const encryptedData = localStorage.getItem(SESSION_CONFIG.STORAGE_KEYS.USER_DATA);
       if (!encryptedData) return null;
