@@ -3,6 +3,7 @@ members = [
     "programs/treasury",
     "programs/bridge"
 ]
+resolver = "2"
 
 [profile.release]
 overflow-checks = true 

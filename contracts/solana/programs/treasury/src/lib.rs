@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Mint, Transfer};
-use mpl_token_metadata::state::Metadata;
 pub mod ulpin_freeze;
 use ulpin_freeze::*;
 

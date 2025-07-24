@@ -17,7 +17,6 @@ default = []
 [dependencies]
 anchor-lang = "0.29.0"
 anchor-spl = "0.29.0"
-mpl-token-metadata = "1.13.2"
 solana-program = "1.16.0"
 thiserror = "1.0"
 borsh = "0.10.3"
