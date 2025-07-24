@@ -674,13 +674,13 @@ const PropertyTransferWorkflow: React.FC = () => {
                     ) : (
                       step.id
                     )}
-                  </div>
+          </div>
                   {index < 4 && (
                     <div className={`w-16 h-0.5 mx-2 ${
                       step.status === 'completed' ? 'bg-green-500' : 'bg-gray-300'
                     }`} />
                   )}
-                </div>
+        </div>
               ))}
             </div>
             <div className="flex justify-between mt-2">
@@ -688,14 +688,14 @@ const PropertyTransferWorkflow: React.FC = () => {
                 <div key={step.id} className="text-center">
                   <div className="text-xs font-medium text-gray-900">{step.title}</div>
                   <div className="text-xs text-gray-500">{step.description}</div>
-                </div>
+          </div>
               ))}
             </div>
           </div>
         )}
 
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           {steps[currentStep - 1].component}
         </div>
 
@@ -721,7 +721,7 @@ const PropertyTransferWorkflow: React.FC = () => {
                     <div className="flex items-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                       Processing...
-                    </div>
+                </div>
                   ) : (
                     'Submit Transfer'
                   )}
