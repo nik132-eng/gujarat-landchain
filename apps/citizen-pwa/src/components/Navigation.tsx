@@ -9,6 +9,8 @@ import ClientOnly from './ClientOnly'
 const navigation = [
   { name: 'Home', href: '/', icon: '🏠' },
   { name: 'Property Map', href: '/map', icon: '🗺️' },
+  { name: 'Buy Properties', href: '/buy-properties', icon: '💰' },
+  { name: 'List Property', href: '/list-property', icon: '📝' },
   { name: 'My Properties', href: '/properties', icon: '📋' },
   { name: 'Transfers', href: '/transfers', icon: '🔄' },
   { name: 'Wallet', href: '/wallet', icon: '👛' },
@@ -45,6 +47,18 @@ export default function Navigation() {
               className="text-gray-700 hover:text-gujarat-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
               Property Map
+            </Link>
+            <Link 
+              href="/buy-properties" 
+              className="text-gray-700 hover:text-gujarat-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Buy Properties
+            </Link>
+            <Link 
+              href="/list-property" 
+              className="text-gray-700 hover:text-gujarat-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              List Property
             </Link>
             <Link 
               href="/transfers" 
